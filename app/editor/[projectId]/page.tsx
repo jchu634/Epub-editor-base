@@ -399,6 +399,7 @@ export default function EditorPage() {
                                     value={fileContent}
                                     onChange={handleContentChange}
                                     language={getFileLanguage(selectedFile)}
+                                    onSave={handleSave}
                                 />
                             ) : (
                                 <div className="flex items-center justify-center h-full text-muted-foreground">

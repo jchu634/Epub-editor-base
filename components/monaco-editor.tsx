@@ -9,9 +9,10 @@ interface MonacoEditorProps {
   onChange: (value: string) => void;
   language: string;
   readOnly?: boolean;
+  onSave?: () => void;
 }
 
-export function MonacoEditor({ value, onChange, language, readOnly = false }: MonacoEditorProps) {
+export function MonacoEditor({ value, onChange, language, readOnly = false, onSave }: MonacoEditorProps) {
   const { theme } = useTheme();
   const editorRef = useRef<any>(null);
 
@@ -32,8 +33,10 @@ export function MonacoEditor({ value, onChange, language, readOnly = false }: Mo
 
     // Add custom keybindings
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      // Save functionality can be added here
-      console.log('Save triggered');
+      // Call the onSave function if provided
+      if (onSave) {
+        onSave();
+      }
     });
   };
 

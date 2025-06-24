@@ -105,10 +105,10 @@ export function FileExplorer({ files, selectedFile, onFileSelect, onRefresh }: F
       <div key={item.path}>
         <div
           className={cn(
-            "flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-sm cursor-pointer group",
-            selectedFile === item.path && "bg-accent",
-            `ml-${level * 4}`
+            "flex items-center gap-2 py-1 hover:bg-accent rounded-sm cursor-pointer group",
+            selectedFile === item.path && "bg-accent"
           )}
+          style={{ paddingLeft: `${level * 20 + 8}px` }}
           onClick={() => {
             if (item.type === 'directory') {
               toggleDirectory(item.path);
@@ -117,11 +117,11 @@ export function FileExplorer({ files, selectedFile, onFileSelect, onRefresh }: F
             }
           }}
         >
-          {item.type === 'directory' && (
+          {item.type === 'directory' ? (
             <Button
               variant="ghost"
               size="icon"
-              className="h-4 w-4 p-0"
+              className="h-4 w-4 p-0 flex-shrink-0"
               onClick={(e) => {
                 e.stopPropagation();
                 toggleDirectory(item.path);
@@ -133,17 +133,20 @@ export function FileExplorer({ files, selectedFile, onFileSelect, onRefresh }: F
                 <ChevronRight className="h-3 w-3" />
               )}
             </Button>
+          ) : (
+            <div className="w-4 flex-shrink-0" />
           )}
           
-          {getFileIcon(item.name, item.type === 'directory')}
-          
-          <span className="flex-1 text-sm truncate">{item.name}</span>
-          
-          {item.type === 'file' && (
-            <Badge variant="outline" className="text-xs h-5">
-              {getFileExtension(item.name)}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2 flex-grow min-w-0">
+            {getFileIcon(item.name, item.type === 'directory')}
+            <span className="text-sm truncate flex-grow">{item.name}</span>
+            
+            {item.type === 'file' && (
+              <Badge variant="outline" className="text-xs h-5 flex-shrink-0">
+                {getFileExtension(item.name)}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {item.type === 'directory' && 
@@ -171,7 +174,7 @@ export function FileExplorer({ files, selectedFile, onFileSelect, onRefresh }: F
       </div>
       
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="px-2 py-1">
           {renderFileTree(filteredFiles)}
         </div>
       </ScrollArea>

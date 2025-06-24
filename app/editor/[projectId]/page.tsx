@@ -43,7 +43,7 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
-  const { currentProject } = useSelector(appStore, (state) => state);
+  const { currentProject } = useSelector(appStore, (state) => state.context);
 
   useEffect(() => {
     loadProject();
@@ -65,6 +65,12 @@ export default function EditorPage() {
     try {
       setIsLoading(true);
       const opfs = OPFSManager.getInstance();
+      
+      // Initialize OPFS before any file system operations
+      const initialized = await opfs.initialize();
+      if (!initialized) {
+        throw new Error('Failed to initialize OPFS');
+      }
       
       // Load project metadata
       const metadataStr = await opfs.readFile(projectId, 'metadata.json');

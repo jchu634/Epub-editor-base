@@ -95,14 +95,14 @@ export default function EditorPage() {
   const loadFileStructure = async () => {
     try {
       const opfs = OPFSManager.getInstance();
-      const fileList = await opfs.listFiles(projectId);
+      const allFiles = await opfs.listAllFilesAndDirectories(projectId);
       
-      // Build file tree structure
-      const fileTree = buildFileTree(fileList);
+      // Build file tree structure from the flat list with full paths
+      const fileTree = buildFileTree(allFiles);
       setFiles(fileTree);
       
       // Auto-select first HTML file
-      const firstHtmlFile = findFirstHtmlFile(fileList);
+      const firstHtmlFile = findFirstHtmlFile(allFiles);
       if (firstHtmlFile) {
         setSelectedFile(firstHtmlFile);
         await loadFileContent(firstHtmlFile);
@@ -114,37 +114,60 @@ export default function EditorPage() {
     }
   };
 
-  const buildFileTree = (fileList: { name: string; type: 'file' | 'directory' }[]): FileItem[] => {
+  const buildFileTree = (allFiles: { name: string; type: 'file' | 'directory'; fullPath: string }[]): FileItem[] => {
     const tree: FileItem[] = [];
     const pathMap = new Map<string, FileItem>();
 
-    // Sort files to ensure directories come first
-    const sortedFiles = fileList.sort((a, b) => {
+    // Sort files by path depth and then alphabetically
+    const sortedFiles = allFiles.sort((a, b) => {
+      const aDepth = a.fullPath.split('/').length;
+      const bDepth = b.fullPath.split('/').length;
+      
+      if (aDepth !== bDepth) {
+        return aDepth - bDepth;
+      }
+      
+      // Same depth, sort directories first, then alphabetically
       if (a.type !== b.type) {
         return a.type === 'directory' ? -1 : 1;
       }
-      return a.name.localeCompare(b.name);
+      
+      return a.fullPath.localeCompare(b.fullPath);
     });
 
+    // Build the tree structure
     for (const file of sortedFiles) {
+      const pathParts = file.fullPath.split('/');
       const item: FileItem = {
         name: file.name,
         type: file.type,
-        path: file.name,
+        path: file.fullPath,
         children: file.type === 'directory' ? [] : undefined,
       };
 
-      tree.push(item);
-      pathMap.set(file.name, item);
+      if (pathParts.length === 1) {
+        // Root level item
+        tree.push(item);
+        pathMap.set(file.fullPath, item);
+      } else {
+        // Nested item - find parent
+        const parentPath = pathParts.slice(0, -1).join('/');
+        const parent = pathMap.get(parentPath);
+        
+        if (parent && parent.children) {
+          parent.children.push(item);
+          pathMap.set(file.fullPath, item);
+        }
+      }
     }
 
     return tree;
   };
 
-  const findFirstHtmlFile = (fileList: { name: string; type: 'file' | 'directory' }[]): string | null => {
-    for (const file of fileList) {
-      if (file.type === 'file' && (file.name.endsWith('.html') || file.name.endsWith('.xhtml'))) {
-        return file.name;
+  const findFirstHtmlFile = (allFiles: { name: string; type: 'file' | 'directory'; fullPath: string }[]): string | null => {
+    for (const file of allFiles) {
+      if (file.type === 'file' && (file.fullPath.endsWith('.html') || file.fullPath.endsWith('.xhtml'))) {
+        return file.fullPath;
       }
     }
     return null;

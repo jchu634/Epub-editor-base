@@ -121,6 +121,33 @@ export class OPFSManager {
     return items;
   }
 
+  async listAllFilesAndDirectories(projectId: string): Promise<{ name: string; type: 'file' | 'directory'; fullPath: string }[]> {
+    const projectDir = await this.getProject(projectId);
+    if (!projectDir) throw new Error('Project not found');
+
+    const items: { name: string; type: 'file' | 'directory'; fullPath: string }[] = [];
+
+    const traverseDirectory = async (dir: FileSystemDirectoryHandle, currentPath: string = '') => {
+      for await (const [name, handle] of dir.entries()) {
+        const fullPath = currentPath ? `${currentPath}/${name}` : name;
+        
+        items.push({
+          name,
+          type: handle.kind === 'directory' ? 'directory' : 'file',
+          fullPath
+        });
+
+        // If it's a directory, recursively traverse it
+        if (handle.kind === 'directory') {
+          await traverseDirectory(handle, fullPath);
+        }
+      }
+    };
+
+    await traverseDirectory(projectDir);
+    return items;
+  }
+
   isSupported(): boolean {
     return 'storage' in navigator && 'getDirectory' in navigator.storage;
   }

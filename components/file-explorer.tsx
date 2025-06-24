@@ -77,28 +77,37 @@ export function FileExplorer({ files, selectedFile, onFileSelect, onRefresh }: F
   const filterFiles = (items: FileItem[], term: string): FileItem[] => {
     if (!term) return items;
 
-    return items.filter(item => {
+    const filtered: FileItem[] = [];
+
+    for (const item of items) {
+      const matchesName = item.name.toLowerCase().includes(term.toLowerCase());
+      
       if (item.type === 'directory') {
-        const hasMatchingChildren = item.children && filterFiles(item.children, term).length > 0;
-        return item.name.toLowerCase().includes(term.toLowerCase()) || hasMatchingChildren;
+        const filteredChildren = item.children ? filterFiles(item.children, term) : [];
+        const hasMatchingChildren = filteredChildren.length > 0;
+        
+        if (matchesName || hasMatchingChildren) {
+          filtered.push({
+            ...item,
+            children: filteredChildren
+          });
+        }
+      } else if (matchesName) {
+        filtered.push(item);
       }
-      return item.name.toLowerCase().includes(term.toLowerCase());
-    }).map(item => ({
-      ...item,
-      children: item.children ? filterFiles(item.children, term) : undefined
-    }));
+    }
+
+    return filtered;
   };
 
-  const renderFileTree = (items: FileItem[], level = 0) => {
-    const filteredItems = filterFiles(items, searchTerm);
-
-    return filteredItems.map((item) => (
+  const renderFileTree = (items: FileItem[], level = 0): React.ReactNode => {
+    return items.map((item) => (
       <div key={item.path}>
         <div
           className={cn(
             "flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-sm cursor-pointer group",
             selectedFile === item.path && "bg-accent",
-            level > 0 && "ml-4"
+            `ml-${level * 4}`
           )}
           onClick={() => {
             if (item.type === 'directory') {
@@ -145,6 +154,8 @@ export function FileExplorer({ files, selectedFile, onFileSelect, onRefresh }: F
     ));
   };
 
+  const filteredFiles = filterFiles(files, searchTerm);
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-3 border-b">
@@ -161,7 +172,7 @@ export function FileExplorer({ files, selectedFile, onFileSelect, onRefresh }: F
       
       <ScrollArea className="flex-1">
         <div className="p-2">
-          {renderFileTree(files)}
+          {renderFileTree(filteredFiles)}
         </div>
       </ScrollArea>
     </div>

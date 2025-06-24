@@ -38,6 +38,7 @@ export function PreviewPane({
     baseUrl = "",
 }: PreviewPaneProps) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const scrollPositionRef = useRef({ x: 0, y: 0 });
 
     // --- Custom theme state ---
     const [previewTheme, setPreviewTheme] = useState<PreviewTheme>("system");
@@ -90,6 +91,36 @@ export function PreviewPane({
         return allThemes[previewTheme] || allThemes.light;
     }, [previewTheme, theme, allThemes]);
 
+    // Save scroll position before content changes
+    const saveScrollPosition = useCallback(() => {
+        if (iframeRef.current) {
+            const iframe = iframeRef.current;
+            const iframeWindow = iframe.contentWindow;
+            if (iframeWindow) {
+                scrollPositionRef.current = {
+                    x: iframeWindow.scrollX,
+                    y: iframeWindow.scrollY,
+                };
+            }
+        }
+    }, []);
+
+    // Restore scroll position after content changes
+    const restoreScrollPosition = useCallback(() => {
+        if (iframeRef.current) {
+            const iframe = iframeRef.current;
+            const iframeWindow = iframe.contentWindow;
+            if (iframeWindow) {
+                // Use requestAnimationFrame to ensure content is fully rendered
+                requestAnimationFrame(() => {
+                    iframeWindow.scrollTo(
+                        scrollPositionRef.current.x,
+                        scrollPositionRef.current.y
+                    );
+                });
+            }
+        }
+    }, []);
     const addCustomTheme = (theme: Omit<CustomTheme, "id" | "isCustom">) => {
         const customTheme: CustomTheme = {
             id: `custom-${Date.now()}`,
@@ -291,6 +322,9 @@ export function PreviewPane({
             iframeRef.current &&
             (fileType === "html" || fileType === "xhtml")
         ) {
+            // Save current scroll position before updating content
+            saveScrollPosition();
+
             const iframe = iframeRef.current;
 
             const doc =
@@ -445,9 +479,17 @@ export function PreviewPane({
                     </html>
                 `);
                 doc.close();
+
+                // Restore scroll position after content is loaded
+                iframe.onload = () => {
+                    restoreScrollPosition();
+                };
+
+                // Also try to restore immediately in case onload doesn't fire
+                restoreScrollPosition();
             }
         }
-    }, [content, filePath, actualTheme]);
+    }, [content, filePath, actualTheme, saveScrollPosition, restoreScrollPosition]);
 
     // --- END THEME PREVIEW ---
 

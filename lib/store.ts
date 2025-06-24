@@ -21,6 +21,7 @@ export interface AppState {
 }
 
 export const appStore = createStore(
+  // Initial context
   {
     projects: [] as Project[],
     currentProject: null as Project | null,
@@ -28,32 +29,33 @@ export const appStore = createStore(
     error: null as string | null,
     opfsSupported: false,
   },
+  // Event handlers
   {
-    setProjects: (context, event: { projects: Project[] }) => ({
+    setProjects: (context, event: { type: 'setProjects'; projects: Project[] }) => ({
       ...context,
       projects: event.projects,
     }),
-    setCurrentProject: (context, event: { project: Project | null }) => ({
+    setCurrentProject: (context, event: { type: 'setCurrentProject'; project: Project | null }) => ({
       ...context,
       currentProject: event.project,
     }),
-    setLoading: (context, event: { loading: boolean }) => ({
+    setLoading: (context, event: { type: 'setLoading'; loading: boolean }) => ({
       ...context,
       isLoading: event.loading,
     }),
-    setError: (context, event: { error: string | null }) => ({
+    setError: (context, event: { type: 'setError'; error: string | null }) => ({
       ...context,
       error: event.error,
     }),
-    setOpfsSupported: (context, event: { supported: boolean }) => ({
+    setOpfsSupported: (context, event: { type: 'setOpfsSupported'; supported: boolean }) => ({
       ...context,
       opfsSupported: event.supported,
     }),
-    addProject: (context, event: { project: Project }) => ({
+    addProject: (context, event: { type: 'addProject'; project: Project }) => ({
       ...context,
       projects: [...context.projects, event.project],
     }),
-    updateProject: (context, event: { project: Project }) => ({
+    updateProject: (context, event: { type: 'updateProject'; project: Project }) => ({
       ...context,
       projects: context.projects.map(p => 
         p.id === event.project.id ? event.project : p
@@ -62,7 +64,7 @@ export const appStore = createStore(
         ? event.project 
         : context.currentProject,
     }),
-    removeProject: (context, event: { projectId: string }) => ({
+    removeProject: (context, event: { type: 'removeProject'; projectId: string }) => ({
       ...context,
       projects: context.projects.filter(p => p.id !== event.projectId),
       currentProject: context.currentProject?.id === event.projectId 

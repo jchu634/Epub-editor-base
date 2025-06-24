@@ -22,6 +22,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTheme } from "next-themes";
 import { CustomThemeDialog } from "@/components/ui/custom-theme-dialog";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
@@ -41,7 +42,7 @@ export function PreviewPane({
 
     // --- Custom theme state ---
     const [previewTheme, setPreviewTheme] = useState<PreviewTheme>("system");
-    const [systemTheme, setSystemTheme] = useState<"light" | "dark">("light");
+    const { theme } = useTheme();
     const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingTheme, setEditingTheme] = useState<CustomTheme | null>(null);
@@ -72,17 +73,6 @@ export function PreviewPane({
         }
     }, [customThemes]);
 
-    // Listen to system theme changes
-    useEffect(() => {
-        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-        setSystemTheme(mediaQuery.matches ? "dark" : "light");
-        const handleChange = (e: MediaQueryListEvent) => {
-            setSystemTheme(e.matches ? "dark" : "light");
-        };
-        mediaQuery.addEventListener("change", handleChange);
-        return () => mediaQuery.removeEventListener("change", handleChange);
-    }, []);
-
     // All themes
     const allThemes = useMemo(() => {
         return {
@@ -96,10 +86,10 @@ export function PreviewPane({
     // Actual theme to use
     const actualTheme = useMemo(() => {
         if (previewTheme === "system") {
-            return allThemes[systemTheme];
+            return allThemes[theme || "light"];
         }
         return allThemes[previewTheme] || allThemes.light;
-    }, [previewTheme, systemTheme, allThemes]);
+    }, [previewTheme, theme, allThemes]);
 
     const addCustomTheme = (theme: Omit<CustomTheme, "id" | "isCustom">) => {
         const customTheme: CustomTheme = {
@@ -170,8 +160,6 @@ export function PreviewPane({
         if (themeId === "light") return <Sun className="h-3.5 w-3.5" />;
         if (themeId === "dark") return <Moon className="h-3.5 w-3.5" />;
         if (themeId === "system") return <Monitor className="h-3.5 w-3.5" />;
-        if (themeId.includes("high-contrast"))
-            return <Contrast className="h-3.5 w-3.5" />;
         return <Palette className="h-3.5 w-3.5" />;
     };
 
@@ -180,10 +168,22 @@ export function PreviewPane({
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        {getThemeIcon(previewTheme)}
-                        <span className="sr-only">Toggle preview theme</span>
-                    </Button>
+                    <Badge
+                        variant="secondary"
+                        className="text-xs px-1.5 cursor-pointer"
+                    >
+                        {actualTheme.name}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                        >
+                            {getThemeIcon(previewTheme)}
+                            <span className="sr-only">
+                                Toggle preview theme
+                            </span>
+                        </Button>
+                    </Badge>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                     {/* Built-in themes */}
@@ -206,30 +206,13 @@ export function PreviewPane({
                         className="cursor-pointer text-xs"
                     >
                         <Monitor className="mr-2 h-3.5 w-3.5" />
-                        <span>System</span>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-
-                    {/* High contrast themes */}
-                    <DropdownMenuItem
-                        onClick={() => setPreviewTheme("high-contrast-light")}
-                        className="cursor-pointer text-xs"
-                    >
-                        <Contrast className="mr-2 h-3.5 w-3.5" />
-                        <span>High Contrast Light</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => setPreviewTheme("high-contrast-dark")}
-                        className="cursor-pointer text-xs"
-                    >
-                        <Contrast className="mr-2 h-3.5 w-3.5" />
-                        <span>High Contrast Dark</span>
+                        <span>Global</span>
                     </DropdownMenuItem>
 
                     {customThemes.length > 0 && (
                         <>
                             <DropdownMenuSeparator />
+
                             {/* Custom themes */}
                             {customThemes.map((theme) => (
                                 <DropdownMenuItem
@@ -243,11 +226,11 @@ export function PreviewPane({
                                             {theme.name}
                                         </span>
                                     </div>
-                                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center space-x-1 transition-opacity">
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-5 w-5 p-0 hover:bg-accent"
+                                            className="h-5 w-5 p-0 bg-accent cursor-pointer"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleEditTheme(theme);
@@ -259,7 +242,7 @@ export function PreviewPane({
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-5 w-5 p-0 hover:bg-destructive/20 hover:text-destructive"
+                                            className="h-5 w-5 p-0 cursor-pointer"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleDeleteTheme(theme);
@@ -426,9 +409,7 @@ export function PreviewPane({
                             }
                             hr {
                                 border: none;
-                                border-top: 2px solid ${
-                                    actualTheme.borderColor
-                                };
+                                border-top: 2px solid ${actualTheme.borderColor};
                                 margin: 2em 0;
                             }
                             .epub-content {
@@ -447,16 +428,7 @@ export function PreviewPane({
                                 margin-top: 0.1em;
                                 color: ${actualTheme.headingColor};
                             }
-                            ${
-                                actualTheme.id.includes("high-contrast")
-                                    ? `
-                                * { text-shadow: none !important; box-shadow: none !important; }
-                                a { text-decoration: underline !important; text-decoration-thickness: 2px !important; }
-                                button, input, select, textarea { border: 2px solid ${actualTheme.borderColor} !important; }
-                                img { border: 2px solid ${actualTheme.borderColor}; box-shadow: none !important; }
-                            `
-                                    : ""
-                            }
+                            
                             @media (max-width: 600px) {
                                 body { padding: 0.5rem; font-size: 14px; }
                                 h1 { font-size: 1.75em; }
@@ -555,28 +527,20 @@ export function PreviewPane({
                     <Badge variant="outline" className="text-xs">
                         {getFileType(filePath).toUpperCase()}
                     </Badge>
-                    {(getFileType(filePath) === "html" ||
-                        getFileType(filePath) === "xhtml") && (
-                        <Badge variant="secondary" className="text-xs px-1.5">
-                            {actualTheme.name}
-                        </Badge>
-                    )}
                 </div>
                 <div className="flex items-center gap-2">
                     {(getFileType(filePath) === "html" ||
                         getFileType(filePath) === "xhtml") && (
-                        <>
-                            <PreviewThemeToggle />
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={openInNewTab}
-                                className="size-4"
-                            >
-                                <ExternalLink className="size-4" />
-                            </Button>
-                        </>
+                        <PreviewThemeToggle />
                     )}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={openInNewTab}
+                        className="size-4"
+                    >
+                        <ExternalLink className="size-4" />
+                    </Button>
                 </div>
             </div>
             <div className="flex-1 overflow-hidden">{renderPreview()}</div>
@@ -597,13 +561,7 @@ interface CustomTheme {
     isCustom: boolean;
 }
 
-type PreviewTheme =
-    | "light"
-    | "dark"
-    | "system"
-    | "high-contrast-light"
-    | "high-contrast-dark"
-    | string;
+type PreviewTheme = "light" | "dark" | "system" | string;
 
 const BUILT_IN_THEMES: Record<string, CustomTheme> = {
     light: {
@@ -628,30 +586,6 @@ const BUILT_IN_THEMES: Record<string, CustomTheme> = {
         linkVisitedColor: "#c084fc",
         borderColor: "#374151",
         codeBackground: "#1f2937",
-        isCustom: false,
-    },
-    "high-contrast-light": {
-        id: "high-contrast-light",
-        name: "High Contrast Light",
-        background: "#ffffff",
-        color: "#000000",
-        headingColor: "#000000",
-        linkColor: "#0000ff",
-        linkVisitedColor: "#800080",
-        borderColor: "#000000",
-        codeBackground: "#f0f0f0",
-        isCustom: false,
-    },
-    "high-contrast-dark": {
-        id: "high-contrast-dark",
-        name: "High Contrast Dark",
-        background: "#000000",
-        color: "#ffffff",
-        headingColor: "#ffffff",
-        linkColor: "#00ffff",
-        linkVisitedColor: "#ff00ff",
-        borderColor: "#ffffff",
-        codeBackground: "#333333",
         isCustom: false,
     },
 };

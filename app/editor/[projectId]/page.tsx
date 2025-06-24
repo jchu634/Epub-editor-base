@@ -26,6 +26,7 @@ import {
     Code,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import Link from "next/link";
 
 interface FileItem {
@@ -336,6 +337,7 @@ export default function EditorPage() {
                             )}
                             Save
                         </Button>
+                        <ThemeToggle />
 
                         <Button
                             variant="outline"

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,7 @@ interface FileExplorerProps {
     onRefresh: () => void;
 }
 
-export function FileExplorer({
+function FileExplorer({
     files,
     selectedFile,
     onFileSelect,
@@ -193,3 +193,7 @@ export function FileExplorer({
         </div>
     );
 }
+
+// Memoize the FileExplorer component to prevent unnecessary re-renders
+export default memo(FileExplorer);
+export { FileExplorer };

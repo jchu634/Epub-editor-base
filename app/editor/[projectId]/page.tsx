@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -44,6 +44,95 @@ export default function EditorPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   const { currentProject } = useSelector(appStore, (state) => state.context);
+
+  // Memoize loadFileContent function
+  const loadFileContent = useCallback(async (filePath: string) => {
+    try {
+      const opfs = OPFSManager.getInstance();
+      const content = await opfs.readFile(projectId, filePath);
+      setFileContent(content);
+      setHasUnsavedChanges(false);
+    } catch (err) {
+      console.error('Failed to load file content:', err);
+      toast.error('Failed to load file');
+    }
+  }, [projectId]);
+
+  // Memoize loadFileStructure function
+  const loadFileStructure = useCallback(async () => {
+    try {
+      const opfs = OPFSManager.getInstance();
+      const allFiles = await opfs.listAllFilesAndDirectories(projectId);
+      
+      // Build file tree structure from the flat list with full paths
+      const fileTree = buildFileTree(allFiles);
+      setFiles(fileTree);
+      
+      // Auto-select first HTML file
+      const firstHtmlFile = findFirstHtmlFile(allFiles);
+      if (firstHtmlFile) {
+        setSelectedFile(firstHtmlFile);
+        await loadFileContent(firstHtmlFile);
+      }
+      
+    } catch (err) {
+      console.error('Failed to load file structure:', err);
+      toast.error('Failed to load files');
+    }
+  }, [projectId, loadFileContent]);
+
+  // Memoize handleFileSelect function
+  const handleFileSelect = useCallback(async (filePath: string) => {
+    if (hasUnsavedChanges) {
+      const shouldContinue = confirm('You have unsaved changes. Do you want to continue without saving?');
+      if (!shouldContinue) return;
+    }
+
+    setSelectedFile(filePath);
+    await loadFileContent(filePath);
+  }, [hasUnsavedChanges, loadFileContent]);
+
+  // Memoize handleContentChange function
+  const handleContentChange = useCallback((newContent: string) => {
+    setFileContent(newContent);
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Memoize handleSave function
+  const handleSave = useCallback(async () => {
+    if (!selectedFile) return;
+
+    try {
+      setIsSaving(true);
+      const opfs = OPFSManager.getInstance();
+      await opfs.writeFile(projectId, selectedFile, fileContent);
+      
+      // Update project metadata
+      const metadataStr = await opfs.readFile(projectId, 'metadata.json');
+      const metadata = JSON.parse(metadataStr);
+      metadata.lastModified = new Date().toISOString();
+      await opfs.writeFile(projectId, 'metadata.json', JSON.stringify(metadata, null, 2));
+      
+      setHasUnsavedChanges(false);
+      toast.success('File saved successfully');
+    } catch (err) {
+      console.error('Failed to save file:', err);
+      toast.error('Failed to save file');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [selectedFile, fileContent, projectId]);
+
+  // Memoize handleExport function
+  const handleExport = useCallback(async () => {
+    try {
+      // TODO: Implement EPUB export functionality
+      toast.info('Export functionality coming soon!');
+    } catch (err) {
+      console.error('Failed to export:', err);
+      toast.error('Failed to export EPUB');
+    }
+  }, []);
 
   useEffect(() => {
     loadProject();
@@ -95,28 +184,6 @@ export default function EditorPage() {
       router.push('/');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const loadFileStructure = async () => {
-    try {
-      const opfs = OPFSManager.getInstance();
-      const allFiles = await opfs.listAllFilesAndDirectories(projectId);
-      
-      // Build file tree structure from the flat list with full paths
-      const fileTree = buildFileTree(allFiles);
-      setFiles(fileTree);
-      
-      // Auto-select first HTML file
-      const firstHtmlFile = findFirstHtmlFile(allFiles);
-      if (firstHtmlFile) {
-        setSelectedFile(firstHtmlFile);
-        await loadFileContent(firstHtmlFile);
-      }
-      
-    } catch (err) {
-      console.error('Failed to load file structure:', err);
-      toast.error('Failed to load files');
     }
   };
 
@@ -177,67 +244,6 @@ export default function EditorPage() {
       }
     }
     return null;
-  };
-
-  const loadFileContent = async (filePath: string) => {
-    try {
-      const opfs = OPFSManager.getInstance();
-      const content = await opfs.readFile(projectId, filePath);
-      setFileContent(content);
-      setHasUnsavedChanges(false);
-    } catch (err) {
-      console.error('Failed to load file content:', err);
-      toast.error('Failed to load file');
-    }
-  };
-
-  const handleFileSelect = async (filePath: string) => {
-    if (hasUnsavedChanges) {
-      const shouldContinue = confirm('You have unsaved changes. Do you want to continue without saving?');
-      if (!shouldContinue) return;
-    }
-
-    setSelectedFile(filePath);
-    await loadFileContent(filePath);
-  };
-
-  const handleContentChange = (newContent: string) => {
-    setFileContent(newContent);
-    setHasUnsavedChanges(true);
-  };
-
-  const handleSave = async () => {
-    if (!selectedFile) return;
-
-    try {
-      setIsSaving(true);
-      const opfs = OPFSManager.getInstance();
-      await opfs.writeFile(projectId, selectedFile, fileContent);
-      
-      // Update project metadata
-      const metadataStr = await opfs.readFile(projectId, 'metadata.json');
-      const metadata = JSON.parse(metadataStr);
-      metadata.lastModified = new Date().toISOString();
-      await opfs.writeFile(projectId, 'metadata.json', JSON.stringify(metadata, null, 2));
-      
-      setHasUnsavedChanges(false);
-      toast.success('File saved successfully');
-    } catch (err) {
-      console.error('Failed to save file:', err);
-      toast.error('Failed to save file');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleExport = async () => {
-    try {
-      // TODO: Implement EPUB export functionality
-      toast.info('Export functionality coming soon!');
-    } catch (err) {
-      console.error('Failed to export:', err);
-      toast.error('Failed to export EPUB');
-    }
   };
 
   const getFileLanguage = (filePath: string) => {

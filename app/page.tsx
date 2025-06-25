@@ -17,11 +17,15 @@ import { EpubParser } from "@/lib/epub";
 import { appStore, Project } from "@/lib/store";
 import { useSelector } from "@xstate/store/react";
 import { Plus, BookOpen, AlertTriangle, Loader2 } from "lucide-react";
+import { ConfirmDeleteProjectDialog } from "@/components/ui/confirm-delete-dialog";
 import { toast } from "sonner";
 
 export default function HomePage() {
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-    const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(
+        null
+    );
 
     const { projects, isLoading, error, opfsSupported } = useSelector(
         appStore,
@@ -158,30 +162,29 @@ export default function HomePage() {
         }
     };
 
-    const handleDeleteProject = async (projectId: string) => {
-        if (
-            !confirm(
-                "Are you sure you want to delete this project? This action cannot be undone."
-            )
-        ) {
-            return;
-        }
+    const handleDeleteProject = (projectId: string) => {
+        const project = projects.find((p) => p.id === projectId) || null;
+        setProjectToDelete(project);
+        setDeleteDialogOpen(true);
+    };
 
+    const confirmDeleteProject = async () => {
+        if (!projectToDelete) return;
         try {
             const opfs = OPFSManager.getInstance();
-            await opfs.deleteProject(projectId);
-            appStore.send({ type: "removeProject", projectId });
+            await opfs.deleteProject(projectToDelete.id);
+            appStore.send({
+                type: "removeProject",
+                projectId: projectToDelete.id,
+            });
             toast.success("Project deleted successfully");
         } catch (err) {
             console.error("Failed to delete project:", err);
             toast.error("Failed to delete project");
+        } finally {
+            setDeleteDialogOpen(false);
+            setProjectToDelete(null);
         }
-    };
-
-    const handleEditProject = (project: Project) => {
-        setEditingProject(project);
-        // TODO: Implement edit dialog
-        toast.info("Edit functionality coming soon!");
     };
 
     if (isLoading) {
@@ -275,7 +278,6 @@ export default function HomePage() {
                                     key={project.id}
                                     project={project}
                                     onDelete={handleDeleteProject}
-                                    onEdit={handleEditProject}
                                 />
                             ))}
                         </div>
@@ -286,6 +288,16 @@ export default function HomePage() {
                     open={uploadDialogOpen}
                     onOpenChange={setUploadDialogOpen}
                     onUpload={handleUpload}
+                />
+
+                <ConfirmDeleteProjectDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={(open) => {
+                        setDeleteDialogOpen(open);
+                        if (!open) setProjectToDelete(null);
+                    }}
+                    onConfirm={confirmDeleteProject}
+                    deleteName={projectToDelete?.name || ""}
                 />
             </div>
         </div>

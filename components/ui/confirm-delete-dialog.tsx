@@ -12,17 +12,17 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface ConfirmDeleteDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
     onConfirm: () => void;
-    themeName: string;
+    deleteName: string;
 }
 
-export function ConfirmDeleteDialog({
+export function ConfirmDeleteThemeDialog({
     open,
     onOpenChange,
     onConfirm,
-    themeName,
+    deleteName,
 }: ConfirmDeleteDialogProps) {
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -30,8 +30,8 @@ export function ConfirmDeleteDialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Custom Theme</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to delete the theme "{themeName}"?
-                        This action cannot be undone.
+                        Are you sure you want to delete the theme "{deleteName}
+                        "? This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -41,6 +41,36 @@ export function ConfirmDeleteDialog({
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                         Delete Theme
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+export function ConfirmDeleteProjectDialog({
+    open,
+    onOpenChange,
+    onConfirm,
+    deleteName,
+}: ConfirmDeleteDialogProps) {
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to delete the project "
+                        {deleteName}
+                        "? This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={onConfirm}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                        Delete Project
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

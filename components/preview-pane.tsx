@@ -1,19 +1,18 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-    RefreshCw,
     ExternalLink,
     Eye,
     Sun,
     Moon,
     Monitor,
-    Contrast,
     Palette,
     Plus,
     X,
     Edit,
+    Bug,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -24,7 +23,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
 import { CustomThemeDialog } from "@/components/ui/custom-theme-dialog";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { ConfirmDeleteThemeDialog } from "@/components/ui/confirm-delete-dialog";
+
+// A simple debounce utility function
+function debounce<T extends (...args: any[]) => void>(
+    func: T,
+    wait: number
+): (...args: Parameters<T>) => void {
+    let timeout: NodeJS.Timeout;
+    return function executedFunction(...args: Parameters<T>) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
 interface PreviewPaneProps {
     content: string;
@@ -39,8 +54,11 @@ export function PreviewPane({
 }: PreviewPaneProps) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const scrollPositionRef = useRef({ x: 0, y: 0 });
+    const isContentHtmlRef = useRef(false);
+    const serviceWorkerRegistrationRef =
+        useRef<ServiceWorkerRegistration | null>(null);
 
-    // --- Custom theme state ---
+    // --- Custom theme state (unchanged) ---
     const [previewTheme, setPreviewTheme] = useState<PreviewTheme>("system");
     const { theme } = useTheme();
     const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
@@ -51,29 +69,25 @@ export function PreviewPane({
         null
     );
 
-    // Load custom themes from localStorage
     useEffect(() => {
         const savedThemes = localStorage.getItem("epub-editor-custom-themes");
         if (savedThemes) {
             try {
                 setCustomThemes(JSON.parse(savedThemes));
             } catch (error) {
-                // ignore
+                console.error("Failed to parse custom themes:", error);
+                localStorage.removeItem("epub-editor-custom-themes");
             }
         }
     }, []);
 
-    // Save custom themes to localStorage
     useEffect(() => {
-        if (customThemes.length > 0) {
-            localStorage.setItem(
-                "epub-editor-custom-themes",
-                JSON.stringify(customThemes)
-            );
-        }
+        localStorage.setItem(
+            "epub-editor-custom-themes",
+            JSON.stringify(customThemes)
+        );
     }, [customThemes]);
 
-    // All themes
     const allThemes = useMemo(() => {
         return {
             ...BUILT_IN_THEMES,
@@ -83,7 +97,6 @@ export function PreviewPane({
         };
     }, [customThemes]);
 
-    // Actual theme to use
     const actualTheme = useMemo(() => {
         if (previewTheme === "system") {
             return allThemes[theme || "light"];
@@ -91,36 +104,6 @@ export function PreviewPane({
         return allThemes[previewTheme] || allThemes.light;
     }, [previewTheme, theme, allThemes]);
 
-    // Save scroll position before content changes
-    const saveScrollPosition = useCallback(() => {
-        if (iframeRef.current) {
-            const iframe = iframeRef.current;
-            const iframeWindow = iframe.contentWindow;
-            if (iframeWindow) {
-                scrollPositionRef.current = {
-                    x: iframeWindow.scrollX,
-                    y: iframeWindow.scrollY,
-                };
-            }
-        }
-    }, []);
-
-    // Restore scroll position after content changes
-    const restoreScrollPosition = useCallback(() => {
-        if (iframeRef.current) {
-            const iframe = iframeRef.current;
-            const iframeWindow = iframe.contentWindow;
-            if (iframeWindow) {
-                // Use requestAnimationFrame to ensure content is fully rendered
-                requestAnimationFrame(() => {
-                    iframeWindow.scrollTo(
-                        scrollPositionRef.current.x,
-                        scrollPositionRef.current.y
-                    );
-                });
-            }
-        }
-    }, []);
     const addCustomTheme = (theme: Omit<CustomTheme, "id" | "isCustom">) => {
         const customTheme: CustomTheme = {
             id: `custom-${Date.now()}`,
@@ -171,7 +154,6 @@ export function PreviewPane({
         setEditingTheme(null);
         setDialogOpen(true);
     };
-
     // --- End custom theme state ---
 
     const getFileType = (path: string) => {
@@ -185,7 +167,6 @@ export function PreviewPane({
         window.open(url, "_blank");
     };
 
-    // --- THEME ICON ---
     const getThemeIcon = (themeId: string) => {
         if (themeId === "light") return <Sun className="h-3.5 w-3.5" />;
         if (themeId === "dark") return <Moon className="h-3.5 w-3.5" />;
@@ -193,7 +174,6 @@ export function PreviewPane({
         return <Palette className="h-3.5 w-3.5" />;
     };
 
-    // --- THEME TOGGLE DROPDOWN ---
     const PreviewThemeToggle = () => (
         <>
             <DropdownMenu>
@@ -206,7 +186,7 @@ export function PreviewPane({
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0"
+                            className="size-6 p-0 cursor-pointer"
                         >
                             {getThemeIcon(previewTheme)}
                             <span className="sr-only">
@@ -216,7 +196,6 @@ export function PreviewPane({
                     </Badge>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                    {/* Built-in themes */}
                     <DropdownMenuItem
                         onClick={() => setPreviewTheme("light")}
                         className="cursor-pointer text-xs"
@@ -242,8 +221,6 @@ export function PreviewPane({
                     {customThemes.length > 0 && (
                         <>
                             <DropdownMenuSeparator />
-
-                            {/* Custom themes */}
                             {customThemes.map((theme) => (
                                 <DropdownMenuItem
                                     key={theme.id}
@@ -306,192 +283,245 @@ export function PreviewPane({
                 editingTheme={editingTheme ?? undefined}
             />
 
-            <ConfirmDeleteDialog
+            <ConfirmDeleteThemeDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 onConfirm={confirmDeleteTheme}
-                themeName={themeToDelete?.name || ""}
+                deleteName={themeToDelete?.name || ""}
             />
         </>
     );
 
-    // --- HTML/XHTML THEME PREVIEW ---
-    useEffect(() => {
-        const fileType = getFileType(filePath);
-        if (
-            iframeRef.current &&
-            (fileType === "html" || fileType === "xhtml")
-        ) {
-            // Save current scroll position before updating content
-            saveScrollPosition();
+    const iframeStyles = useMemo(() => {
+        return `* { box-sizing: border-box; }
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                        line-height: 1.6;
+                        color: ${actualTheme.color};
+                        background: ${actualTheme.background};
+                        margin: 0;
+                        padding: 1rem;
+                        font-size: 16px;
+                        transition: all 0.3s ease;
+                    }
+                    h1, h2, h3, h4, h5, h6 {
+                        color: ${actualTheme.headingColor};
+                        margin-top: 1.5em;
+                        margin-bottom: 0.5em;
+                        font-weight: 600;
+                        line-height: 1.3;
+                    }
+                    h1 { font-size: 2em; }
+                    h2 { font-size: 1.5em; }
+                    h3 { font-size: 1.25em; }
+                    p {
+                        margin-bottom: 1em;
+                        text-align: justify;
+                        hyphens: auto;
+                    }
+                    a {
+                        color: ${actualTheme.linkColor};
+                        text-decoration: underline;
+                        text-decoration-thickness: 1px;
+                        text-underline-offset: 2px;
+                    }
+                    a:visited {
+                        color: ${actualTheme.linkVisitedColor};
+                    }
+                    a:hover {
+                        text-decoration-thickness: 2px;
+                    }
+                    blockquote {
+                        border-left: 4px solid ${actualTheme.linkColor};
+                        margin: 1em 0;
+                        padding-left: 1em;
+                        font-style: italic;
+                        opacity: 0.9;
+                    }
+                    code {
+                        background: ${actualTheme.codeBackground};
+                        padding: 0.2em 0.4em;
+                        border-radius: 3px;
+                        font-family: "Intel One Mono", 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+                        font-size: 0.9em;
+                        border: 1px solid ${actualTheme.borderColor};
+                    }
+                    pre {
+                        background: ${actualTheme.codeBackground};
+                        padding: 1em;
+                        border-radius: 6px;
+                        overflow-x: auto;
+                        border: 1px solid ${actualTheme.borderColor};
+                    }
+                    pre code {
+                        background: none;
+                        padding: 0;
+                        border: none;
+                    }
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                        border-radius: 4px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 1em 0;
+                    }
+                    th, td {
+                        border: 1px solid ${actualTheme.borderColor};
+                        padding: 0.5em;
+                        text-align: left;
+                    }
+                    th {
+                        background: ${actualTheme.codeBackground};
+                        font-weight: 600;
+                    }
+                    ul, ol {
+                        padding-left: 1.5em;
+                        margin-bottom: 1em;
+                    }
+                    li {
+                        margin-bottom: 0.25em;
+                    }
+                    hr {
+                        border: none;
+                        border-top: 2px solid ${actualTheme.borderColor};
+                        margin: 2em 0;
+                    }
+                    .epub-content {
+                        max-width: 100%;
+                        margin: 0 auto;
+                    }
+                    .chapter-title {
+                        text-align: center;
+                        margin-bottom: 2em;
+                    }
+                    .drop-cap {
+                        float: left;
+                        font-size: 3em;
+                        line-height: 1;
+                        margin-right: 0.1em;
+                        margin-top: 0.1em;
+                        color: ${actualTheme.headingColor};
+                    }
 
-            const iframe = iframeRef.current;
+                    @media (max-width: 600px) {
+                        body { padding: 0.5rem; font-size: 14px; }
+                        h1 { font-size: 1.75em; }
+                        h2 { font-size: 1.4em; }
+                        h3 { font-size: 1.2em; }
+                    }`;
+    }, [actualTheme]);
 
-            const doc =
-                iframe.contentDocument || iframe.contentWindow?.document;
+    // --- SERVICE WORKER AND SCROLL LOGIC ---
 
-            if (doc) {
-                // Remove XML declaration and DOCTYPE
-                let htmlContent = content.replace(/<\?xml[^>]*\?>\s*/i, "");
-                htmlContent = htmlContent.replace(/<!DOCTYPE[^>]*>\s*/i, "");
-                // Extract body content if present
-                const bodyMatch = htmlContent.match(
-                    /<body[^>]*>([\s\S]*)<\/body>/i
-                );
-                if (bodyMatch) {
-                    htmlContent = bodyMatch[1];
-                }
-                doc.open();
-                doc.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="utf-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1">
-                        <style>
-                            * { box-sizing: border-box; }
-                            body {
-                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                                line-height: 1.6;
-                                color: ${actualTheme.color};
-                                background: ${actualTheme.background};
-                                margin: 0;
-                                padding: 1rem;
-                                font-size: 16px;
-                                transition: all 0.3s ease;
-                            }
-                            h1, h2, h3, h4, h5, h6 {
-                                color: ${actualTheme.headingColor};
-                                margin-top: 1.5em;
-                                margin-bottom: 0.5em;
-                                font-weight: 600;
-                                line-height: 1.3;
-                            }
-                            h1 { font-size: 2em; }
-                            h2 { font-size: 1.5em; }
-                            h3 { font-size: 1.25em; }
-                            p {
-                                margin-bottom: 1em;
-                                text-align: justify;
-                                hyphens: auto;
-                            }
-                            a {
-                                color: ${actualTheme.linkColor};
-                                text-decoration: underline;
-                                text-decoration-thickness: 1px;
-                                text-underline-offset: 2px;
-                            }
-                            a:visited {
-                                color: ${actualTheme.linkVisitedColor};
-                            }
-                            a:hover {
-                                text-decoration-thickness: 2px;
-                            }
-                            blockquote {
-                                border-left: 4px solid ${actualTheme.linkColor};
-                                margin: 1em 0;
-                                padding-left: 1em;
-                                font-style: italic;
-                                opacity: 0.9;
-                            }
-                            code {
-                                background: ${actualTheme.codeBackground};
-                                padding: 0.2em 0.4em;
-                                border-radius: 3px;
-                                font-family: "Intel One Mono", 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-                                font-size: 0.9em;
-                                border: 1px solid ${actualTheme.borderColor};
-                            }
-                            pre {
-                                background: ${actualTheme.codeBackground};
-                                padding: 1em;
-                                border-radius: 6px;
-                                overflow-x: auto;
-                                border: 1px solid ${actualTheme.borderColor};
-                            }
-                            pre code {
-                                background: none;
-                                padding: 0;
-                                border: none;
-                            }
-                            img {
-                                max-width: 100%;
-                                height: auto;
-                                border-radius: 4px;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                            }
-                            table {
-                                width: 100%;
-                                border-collapse: collapse;
-                                margin: 1em 0;
-                            }
-                            th, td {
-                                border: 1px solid ${actualTheme.borderColor};
-                                padding: 0.5em;
-                                text-align: left;
-                            }
-                            th {
-                                background: ${actualTheme.codeBackground};
-                                font-weight: 600;
-                            }
-                            ul, ol {
-                                padding-left: 1.5em;
-                                margin-bottom: 1em;
-                            }
-                            li {
-                                margin-bottom: 0.25em;
-                            }
-                            hr {
-                                border: none;
-                                border-top: 2px solid ${actualTheme.borderColor};
-                                margin: 2em 0;
-                            }
-                            .epub-content {
-                                max-width: 100%;
-                                margin: 0 auto;
-                            }
-                            .chapter-title {
-                                text-align: center;
-                                margin-bottom: 2em;
-                            }
-                            .drop-cap {
-                                float: left;
-                                font-size: 3em;
-                                line-height: 1;
-                                margin-right: 0.1em;
-                                margin-top: 0.1em;
-                                color: ${actualTheme.headingColor};
-                            }
-                            
-                            @media (max-width: 600px) {
-                                body { padding: 0.5rem; font-size: 14px; }
-                                h1 { font-size: 1.75em; }
-                                h2 { font-size: 1.4em; }
-                                h3 { font-size: 1.2em; }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="epub-content">
-                            ${htmlContent}
-                        </div>
-                    </body>
-                    </html>
-                `);
-                doc.close();
-
-                // Restore scroll position after content is loaded
-                iframe.onload = () => {
-                    restoreScrollPosition();
+    // Save scroll position before content changes
+    const saveScrollPosition = useCallback(() => {
+        if (iframeRef.current && isContentHtmlRef.current) {
+            const iframeWindow = iframeRef.current.contentWindow;
+            if (iframeWindow) {
+                scrollPositionRef.current = {
+                    x: iframeWindow.scrollX,
+                    y: iframeWindow.scrollY,
                 };
-
-                // Also try to restore immediately in case onload doesn't fire
-                restoreScrollPosition();
             }
         }
-    }, [content, filePath, actualTheme, saveScrollPosition, restoreScrollPosition]);
+    }, []);
 
-    // --- END THEME PREVIEW ---
+    // Restore scroll position after content changes
+    const restoreScrollPosition = useCallback(() => {
+        if (iframeRef.current && isContentHtmlRef.current) {
+            const iframeWindow = iframeRef.current.contentWindow;
+            if (iframeWindow) {
+                iframeWindow.scrollTo({
+                    top: scrollPositionRef.current.y,
+                    left: scrollPositionRef.current.x,
+                    behavior: "instant",
+                });
+            }
+        }
+    }, []);
+
+    // Debounced function to update the service worker and reload the iframe
+    const updatePreviewDebounced = useCallback(
+        debounce((fullHtml: string) => {
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                // 1. Save the current scroll position
+                saveScrollPosition();
+
+                // 2. Send the new content to the service worker
+                navigator.serviceWorker.controller.postMessage({
+                    type: "UPDATE_CONTENT",
+                    content: fullHtml,
+                });
+
+                // 3. Reload the iframe to fetch the new content from the service worker
+                if (iframeRef.current) {
+                    // The 'load' event will handle restoring the scroll position
+                    iframeRef.current.onload = restoreScrollPosition;
+                    iframeRef.current.contentWindow?.location.reload();
+                }
+            }
+        }, 300), // 300ms debounce delay
+        [saveScrollPosition, restoreScrollPosition] // Dependencies for useCallback
+    );
+
+    // Effect to register the service worker
+    useEffect(() => {
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker
+                .register("/preview-sw.js")
+                .then((registration) => {
+                    serviceWorkerRegistrationRef.current = registration;
+                    console.log(
+                        "Service Worker registered with scope:",
+                        registration.scope
+                    );
+                })
+                .catch((error) => {
+                    console.error("Service Worker registration failed:", error);
+                });
+        }
+
+        // Cleanup: unregister the service worker when the component unmounts
+        return () => {
+            serviceWorkerRegistrationRef.current
+                ?.unregister()
+                .then((success) => {
+                    if (success) {
+                        console.log("Service Worker unregistered.");
+                    }
+                });
+        };
+    }, []);
+
+    // Effect to update the preview when content or theme changes
+    useEffect(() => {
+        const fileType = getFileType(filePath);
+        isContentHtmlRef.current = fileType === "html" || fileType === "xhtml";
+
+        if (isContentHtmlRef.current) {
+            const fullHtml = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Preview</title>
+            <style>${iframeStyles}</style>
+            ${baseUrl ? `<base href="${baseUrl}" />` : ""}
+        </head>
+        <body>
+            ${content}
+        </body>
+        </html>`;
+
+            updatePreviewDebounced(fullHtml);
+        }
+    }, [content, filePath, iframeStyles, baseUrl, updatePreviewDebounced]);
+
+    // --- END SERVICE WORKER AND SCROLL LOGIC ---
 
     const renderPreview = () => {
         const fileType = getFileType(filePath);
@@ -504,18 +534,11 @@ export function PreviewPane({
                         ref={iframeRef}
                         className="w-full h-full border-0"
                         title="Preview"
-                        sandbox="allow-same-origin"
-                        key={`${actualTheme.id}-${content.length}`}
+                        sandbox="allow-same-origin allow-scripts" // allow-scripts is needed for location.reload()
+                        src="/preview-content" // Static URL intercepted by the service worker
                     />
                 );
             case "css":
-                return (
-                    <ScrollArea className="h-full">
-                        <pre className="p-4 text-sm font-mono whitespace-pre-wrap">
-                            <code>{content}</code>
-                        </pre>
-                    </ScrollArea>
-                );
             case "js":
             case "json":
             case "xml":
@@ -560,6 +583,16 @@ export function PreviewPane({
         }
     };
 
+    const logIframeScrollPosition = () => {
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+            const x = iframeRef.current.contentWindow.scrollX;
+            const y = iframeRef.current.contentWindow.scrollY;
+            console.log("Iframe scroll position:", { x, y });
+        } else {
+            console.log("Iframe not ready or not HTML content.");
+        }
+    };
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex items-center justify-between p-3 border-b bg-muted/50">
@@ -579,9 +612,18 @@ export function PreviewPane({
                         variant="ghost"
                         size="icon"
                         onClick={openInNewTab}
-                        className="size-4"
+                        className="size-4 cursor-pointer"
                     >
                         <ExternalLink className="size-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={logIframeScrollPosition}
+                        className="size-4 cursor-pointer"
+                        title="Log iframe scroll position"
+                    >
+                        <Bug className="size-4" />
                     </Button>
                 </div>
             </div>
@@ -590,6 +632,7 @@ export function PreviewPane({
     );
 }
 
+// Unchanged interfaces and constants
 interface CustomTheme {
     id: string;
     name: string;

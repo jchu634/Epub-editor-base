@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Calendar, MoreVertical, Trash2, Edit } from "lucide-react";
+import { BookOpen, Calendar, Trash2 } from "lucide-react";
 import { Project } from "@/lib/store";
 import Link from "next/link";
 

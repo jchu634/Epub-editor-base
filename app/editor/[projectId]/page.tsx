@@ -329,6 +329,8 @@ export default function EditorPage() {
                             size="sm"
                             onClick={handleSave}
                             disabled={!hasUnsavedChanges || isSaving}
+                            title="Save (Ctrl+S)"
+                            className="cursor-pointer"
                         >
                             {isSaving ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -337,17 +339,17 @@ export default function EditorPage() {
                             )}
                             Save
                         </Button>
-                        <ThemeToggle />
 
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={handleExport}
+                            className="cursor-pointer"
                         >
                             <Download className="h-4 w-4 mr-2" />
                             Export
                         </Button>
-
+                        <ThemeToggle />
                         <Button variant="ghost" size="sm">
                             <Settings className="h-4 w-4" />
                         </Button>

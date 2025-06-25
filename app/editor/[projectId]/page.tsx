@@ -111,36 +111,42 @@ export default function EditorPage() {
     }, []);
 
     // Memoize handleSave function
-    const handleSave = useCallback(async () => {
-        if (!selectedFile) return;
+    const handleSave = useCallback(
+        async (contentToSave: string) => {
+            if (!selectedFile) return;
 
-        try {
-            setIsSaving(true);
-            const opfs = OPFSManager.getInstance();
-            await opfs.writeFile(projectId, selectedFile, fileContent);
+            try {
+                setIsSaving(true);
+                const opfs = OPFSManager.getInstance();
+                await opfs.writeFile(projectId, selectedFile, contentToSave); // Use the content received
 
-            // Update project metadata
-            const metadataStr = await opfs.readFile(projectId, "metadata.json");
-            const metadata = JSON.parse(metadataStr);
-            metadata.lastModified = new Date().toISOString();
-            await opfs.writeFile(
-                projectId,
-                "metadata.json",
-                JSON.stringify(metadata, null, 2)
-            );
+                // Update project metadata
+                const metadataStr = await opfs.readFile(
+                    projectId,
+                    "metadata.json"
+                );
+                const metadata = JSON.parse(metadataStr);
+                metadata.lastModified = new Date().toISOString();
+                await opfs.writeFile(
+                    projectId,
+                    "metadata.json",
+                    JSON.stringify(metadata, null, 2)
+                );
 
-            setHasUnsavedChanges(false);
-            toast.success("File saved successfully", {
-                dismissible: true,
-                closeButton: true,
-            });
-        } catch (err) {
-            console.error("Failed to save file:", err);
-            toast.error("Failed to save file", { closeButton: true });
-        } finally {
-            setIsSaving(false);
-        }
-    }, [selectedFile, fileContent, projectId]);
+                setHasUnsavedChanges(false);
+                toast.success("File saved successfully", {
+                    dismissible: true,
+                    closeButton: true,
+                });
+            } catch (err) {
+                console.error("Failed to save file:", err);
+                toast.error("Failed to save file", { closeButton: true });
+            } finally {
+                setIsSaving(false);
+            }
+        },
+        [selectedFile, projectId]
+    );
 
     // Memoize handleExport function
     const handleExport = useCallback(async () => {
@@ -327,7 +333,7 @@ export default function EditorPage() {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={handleSave}
+                            onClick={() => handleSave(fileContent)}
                             disabled={!hasUnsavedChanges || isSaving}
                             title="Save (Ctrl+S)"
                             className="cursor-pointer"

@@ -350,9 +350,11 @@ export default function EditorPage() {
                             Export
                         </Button>
                         <ThemeToggle />
+
+                        {/* TODO Implement Settings menu dialog
                         <Button variant="ghost" size="sm">
                             <Settings className="h-4 w-4" />
-                        </Button>
+                        </Button> */}
                     </div>
                 </div>
             </header>

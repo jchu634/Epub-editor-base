@@ -128,6 +128,7 @@ export class OPFSManager {
         }
 
         const items: { name: string; type: "file" | "directory" }[] = [];
+        // @ts-ignore
         for await (const [name, handle] of currentDir.entries()) {
             items.push({
                 name,
@@ -156,6 +157,7 @@ export class OPFSManager {
             dir: FileSystemDirectoryHandle,
             currentPath: string = ""
         ) => {
+            // @ts-ignore
             for await (const [name, handle] of dir.entries()) {
                 const fullPath = currentPath ? `${currentPath}/${name}` : name;
 

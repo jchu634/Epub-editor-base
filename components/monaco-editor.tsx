@@ -3,6 +3,9 @@
 import { useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { useTheme } from "next-themes";
+import { useSelector } from "@xstate/store/react";
+import { appStore } from "@/lib/store";
+import prettier from "prettier";
 
 interface MonacoEditorProps {
     value: string;
@@ -21,6 +24,53 @@ export function MonacoEditor({
 }: MonacoEditorProps) {
     const { theme } = useTheme();
     const editorRef = useRef<any>(null);
+    const { isPrettierEnabled } = useSelector(appStore, (state) => state.context);
+
+    const formatCode = async (code: string, lang: string): Promise<string> => {
+        if (!isPrettierEnabled) return code;
+
+        try {
+            const parser = getParserForLanguage(lang);
+            if (!parser) return code;
+
+            const formatted = await prettier.format(code, {
+                parser,
+                printWidth: 80,
+                tabWidth: 2,
+                useTabs: false,
+                semi: true,
+                singleQuote: false,
+                quoteProps: "as-needed",
+                trailingComma: "es5",
+                bracketSpacing: true,
+                bracketSameLine: false,
+                arrowParens: "always",
+                htmlWhitespaceSensitivity: "css",
+                endOfLine: "lf",
+            });
+
+            return formatted;
+        } catch (error) {
+            console.warn("Prettier formatting failed:", error);
+            return code;
+        }
+    };
+
+    const getParserForLanguage = (lang: string): string | null => {
+        const languageMap: Record<string, string> = {
+            html: "html",
+            xhtml: "html",
+            css: "css",
+            js: "babel",
+            javascript: "babel",
+            json: "json",
+            xml: "xml",
+            opf: "xml",
+            ncx: "xml",
+        };
+
+        return languageMap[lang] || null;
+    };
 
     const handleEditorDidMount = (editor: any, monaco: any) => {
         editorRef.current = editor;
@@ -35,16 +85,41 @@ export function MonacoEditor({
             scrollBeyondLastLine: false,
             renderWhitespace: "selection",
             bracketPairColorization: { enabled: true },
+            formatOnSave: false, // We'll handle formatting manually
         });
 
         // Add custom keybindings
-        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-            // Call the onSave function if provided
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
             if (onSave) {
-                const currentEditorContent = editor.getValue();
-                onSave(currentEditorContent);
+                let currentContent = editor.getValue();
+                
+                // Format code if Prettier is enabled
+                if (isPrettierEnabled) {
+                    const formatted = await formatCode(currentContent, language);
+                    if (formatted !== currentContent) {
+                        editor.setValue(formatted);
+                        currentContent = formatted;
+                    }
+                }
+                
+                onSave(currentContent);
             }
         });
+
+        // Add format document command (Alt+Shift+F)
+        editor.addCommand(
+            monaco.KeyMod.Alt | monaco.KeyMod.Shift | monaco.KeyCode.KeyF,
+            async () => {
+                if (isPrettierEnabled) {
+                    const currentContent = editor.getValue();
+                    const formatted = await formatCode(currentContent, language);
+                    if (formatted !== currentContent) {
+                        editor.setValue(formatted);
+                        onChange(formatted);
+                    }
+                }
+            }
+        );
     };
 
     const getLanguageFromExtension = (lang: string) => {

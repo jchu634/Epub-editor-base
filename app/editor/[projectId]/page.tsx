@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
     ResizablePanelGroup,
     ResizablePanel,
@@ -24,6 +26,7 @@ import {
     FileText,
     Eye,
     Code,
+    Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -48,7 +51,7 @@ export default function EditorPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    const { currentProject } = useSelector(appStore, (state) => state.context);
+    const { currentProject, isPrettierEnabled } = useSelector(appStore, (state) => state.context);
 
     // Memoize loadFileContent function
     const loadFileContent = useCallback(
@@ -161,6 +164,17 @@ export default function EditorPage() {
             toast.error("Failed to export EPUB");
         }
     }, []);
+
+    const handleTogglePrettier = () => {
+        appStore.send({ type: "togglePrettier" });
+        toast.success(
+            `Prettier ${!isPrettierEnabled ? "enabled" : "disabled"}`,
+            {
+                dismissible: true,
+                closeButton: true,
+            }
+        );
+    };
 
     useEffect(() => {
         loadProject();
@@ -330,6 +344,18 @@ export default function EditorPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-md border">
+                            <Wand2 className="h-4 w-4" />
+                            <Label htmlFor="prettier-toggle" className="text-sm cursor-pointer">
+                                Prettier
+                            </Label>
+                            <Switch
+                                id="prettier-toggle"
+                                checked={isPrettierEnabled}
+                                onCheckedChange={handleTogglePrettier}
+                            />
+                        </div>
+
                         <Button
                             variant="outline"
                             size="sm"

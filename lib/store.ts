@@ -18,6 +18,7 @@ export interface AppState {
     isLoading: boolean;
     error: string | null;
     opfsSupported: boolean;
+    isPrettierEnabled: boolean;
 }
 
 export const appStore = createStore({
@@ -28,6 +29,7 @@ export const appStore = createStore({
         isLoading: false,
         error: null as string | null,
         opfsSupported: false,
+        isPrettierEnabled: true,
     },
     // Event handlers
     on: {
@@ -65,6 +67,10 @@ export const appStore = createStore({
         ) => ({
             ...context,
             opfsSupported: event.supported,
+        }),
+        togglePrettier: (context) => ({
+            ...context,
+            isPrettierEnabled: !context.isPrettierEnabled,
         }),
         addProject: (
             context,

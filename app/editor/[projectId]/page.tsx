@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import Link from "next/link";
+import { EpubParser } from "@/lib/epub";
 
 interface FileItem {
     name: string;
@@ -48,6 +49,7 @@ export default function EditorPage() {
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [fileContent, setFileContent] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -154,16 +156,86 @@ export default function EditorPage() {
     // Memoize handleExport function
     const handleExport = useCallback(async () => {
         try {
-            // TODO: Implement EPUB export functionality
-            toast.info("Export functionality coming soon!", {
+            setIsExporting(true);
+
+            const opfs = OPFSManager.getInstance();
+            // List all files and directories
+            const allFiles = await opfs.listAllFilesAndDirectories(projectId);
+
+            // Filter only files (not directories)
+            const fileEntries = allFiles.filter((f) => f.type === "file");
+
+            // Read all file contents
+            const files = await Promise.all(
+                fileEntries.map(async (f) => ({
+                    path: f.fullPath,
+                    content: await opfs.readFile(projectId, f.fullPath),
+                    mimeType: "", // Will be set by EpubParser.getMimeType
+                }))
+            );
+
+            // Read metadata.json for EPUB metadata
+            const metadataStr = await opfs.readFile(projectId, "metadata.json");
+            const metadataJson = JSON.parse(metadataStr);
+
+            // Build manifest and spine from files (simple version: all HTML/XHTML in spine)
+            const manifest = files.map((file, idx) => ({
+                id: `item${idx + 1}`,
+                href: file.path.startsWith("OEBPS/")
+                    ? file.path.slice(6)
+                    : file.path,
+                mediaType: EpubParser["getMimeType"](file.path),
+            }));
+
+            const spine = manifest
+                .filter((item) => item.mediaType === "application/xhtml+xml")
+                .map((item) => ({ idref: item.id }));
+
+            // EPUB metadata
+            const epubMetadata = {
+                title:
+                    metadataJson.epubMetadata?.title ||
+                    metadataJson.name ||
+                    "Untitled",
+                author: metadataJson.epubMetadata?.author || "Unknown",
+                language: metadataJson.epubMetadata?.language || "en",
+                identifier: metadataJson.epubMetadata?.identifier || projectId,
+            };
+
+            // Compose EPUB structure
+            const epubStructure = {
+                metadata: epubMetadata,
+                manifest,
+                spine,
+                files,
+            };
+
+            // Create EPUB blob
+            const epubBlob = await EpubParser.createEpub(epubStructure);
+
+            // Trigger download
+            const url = URL.createObjectURL(epubBlob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${epubMetadata.title || "book"}.epub`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+
+            toast.success("EPUB exported successfully!", {
                 dismissible: true,
                 closeButton: true,
             });
         } catch (err) {
             console.error("Failed to export:", err);
             toast.error("Failed to export EPUB");
+        } finally {
+            setIsExporting(false);
         }
-    }, []);
+    }, [projectId]);
 
     const handleTogglePrettier = () => {
         appStore.send({ type: "togglePrettier" });
@@ -315,6 +387,21 @@ export default function EditorPage() {
                 <div className="text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
                     <p className="text-muted-foreground">Loading project...</p>
+                </div>
+            </div>
+        );
+    }
+    if (isExporting) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                        Exporting project...
+                    </p>
+                    <p className="text-muted-foreground">
+                        Please do not close or reload this tab.
+                    </p>
                 </div>
             </div>
         );

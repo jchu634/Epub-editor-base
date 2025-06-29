@@ -344,6 +344,22 @@ export default function HomePage() {
                 onConfirm={confirmDeleteProject}
                 deleteName={projectToDelete?.name || ""}
             />
+
+            {/* Bolt images in bottom right */}
+            <div className="fixed bottom-6 right-6 z-50">
+                {/* eslint-disable-next-line */}
+                <img
+                    src="/bolt_black_circle.png"
+                    alt="Bolt Black"
+                    className="size-30 block dark:hidden"
+                />
+                {/* eslint-disable-next-line */}
+                <img
+                    src="/bolt_white_circle.png"
+                    alt="Bolt White"
+                    className="size-30 hidden dark:block"
+                />
+            </div>
         </div>
     );
 }

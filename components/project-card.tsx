@@ -28,7 +28,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
     };
 
     return (
-        <Card className="group hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
+        <Card className="group hover:shadow-lg transition-all duration-200 hover:scale-[1.02] bg-background/95">
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">

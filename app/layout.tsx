@@ -15,9 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "EPUB Editor - Advanced Book Creation Tool",
-    description:
-        "Create and edit EPUB books with advanced tools including Monaco editor and live preview",
+    title: "Inkproof Editor",
+    description: "Easily edit ePUB books on the web.",
 };
 
 export default function RootLayout({
@@ -27,12 +26,12 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <head>
+            {/* <head>
                 <script
                     crossOrigin="anonymous"
                     src="//unpkg.com/react-scan/dist/auto.global.js"
                 ></script>
-            </head>
+            </head> */}
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
@@ -43,7 +42,7 @@ export default function RootLayout({
                     disableTransitionOnChange
                 >
                     {children}
-                    <Toaster richColors position="top-right" />
+                    <Toaster richColors position="bottom-right" />
                 </ThemeProvider>
             </body>
         </html>

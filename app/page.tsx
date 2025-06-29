@@ -18,7 +18,10 @@ import { appStore, Project } from "@/lib/store";
 import { useSelector } from "@xstate/store/react";
 import { Plus, BookOpen, AlertTriangle, Loader2 } from "lucide-react";
 import { ConfirmDeleteProjectDialog } from "@/components/ui/confirm-delete-dialog";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import Logo from "@/components/logo";
 
 export default function HomePage() {
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -154,7 +157,7 @@ export default function HomePage() {
         } catch (err) {
             console.error("Upload failed:", err);
             toast.error(
-                err instanceof Error ? err.message : "Failed to upload EPUB"
+                err instanceof Error ? err.message : "Failed to upload ePUB"
             );
             throw err;
         } finally {
@@ -192,9 +195,7 @@ export default function HomePage() {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                        Loading application...
-                    </p>
+                    <p className="text-muted-foreground">Importing ePUB...</p>
                 </div>
             </div>
         );
@@ -218,8 +219,8 @@ export default function HomePage() {
                             </AlertDescription>
                         </Alert>
                         <p className="text-sm text-muted-foreground mt-4">
-                            Please use a modern browser like Chrome, Edge, or
-                            Firefox to access the EPUB editor.
+                            Inkproof requires a modern updated browser to
+                            operate.(e.g. Chrome, Edge, or Firefox.)
                         </p>
                     </CardContent>
                 </Card>
@@ -228,25 +229,50 @@ export default function HomePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-            <div className="container mx-auto px-4 py-8">
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold mb-2">EPUB Editor</h1>
-                    <p className="text-muted-foreground text-lg">
-                        Create and edit EPUB books with advanced tools
-                    </p>
+        <div className="min-h-screen bg-background/95 p-8 flex flex-col">
+            <div className="flex justify-between">
+                <div className="flex flex-row items-center mb-6 grow-0">
+                    <div className=" dark:text-black">
+                        <Logo
+                            width={100}
+                            height={100}
+                            className="text-black block dark:hidden"
+                        />
+                        <Logo
+                            width={100}
+                            height={100}
+                            className="text-white hidden dark:block"
+                        />
+                    </div>
+                    <div className="flex flex-col ">
+                        <h1 className="text-4xl font-bold mb-2">
+                            Inkproof Editor
+                        </h1>
+                        <p className="text-muted-foreground text-lg">
+                            Edit ePUB books with advanced tools
+                        </p>
+                    </div>
                 </div>
+                <div>
+                    <ThemeToggle />
+                </div>
+            </div>
 
+            <div className="w-full justify-start items-start p-8 bg-muted-foreground/30 dark:bg-muted/50 min-h-3/4 grow-8 rounded-3xl">
                 {projects.length === 0 ? (
-                    <div className="max-w-md mx-auto">
-                        <Card className="text-center">
-                            <CardHeader>
-                                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                                <CardTitle>No Projects Yet</CardTitle>
-                                <CardDescription>
-                                    Upload an EPUB file to create your first
-                                    project
-                                </CardDescription>
+                    <div className="max-w-md ">
+                        <Card className="text-center bg-background/95">
+                            <CardHeader className="flex flex-row items-center space-x-2 ">
+                                <div>
+                                    <BookOpen className="h-12 w-12 mx-auto  text-muted-foreground" />
+                                </div>
+                                <div className="flex flex-col text-left">
+                                    <CardTitle>No Projects Yet</CardTitle>
+                                    <CardDescription>
+                                        Upload an ePUB file to create your first
+                                        project
+                                    </CardDescription>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <Button
@@ -262,7 +288,7 @@ export default function HomePage() {
                     </div>
                 ) : (
                     <div>
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex justify-between items-center mb-6 ">
                             <h2 className="text-2xl font-semibold">
                                 Your Projects
                             </h2>
@@ -283,23 +309,42 @@ export default function HomePage() {
                         </div>
                     </div>
                 )}
+                <div className="pt-10">
+                    <div className="text-2xl pt-2 font-semibold">
+                        Recent Projects
+                    </div>
 
-                <UploadDialog
-                    open={uploadDialogOpen}
-                    onOpenChange={setUploadDialogOpen}
-                    onUpload={handleUpload}
-                />
-
-                <ConfirmDeleteProjectDialog
-                    open={deleteDialogOpen}
-                    onOpenChange={(open) => {
-                        setDeleteDialogOpen(open);
-                        if (!open) setProjectToDelete(null);
-                    }}
-                    onConfirm={confirmDeleteProject}
-                    deleteName={projectToDelete?.name || ""}
-                />
+                    <Separator className="border-2 my-2" />
+                    <div className="max-w-md ">
+                        {/* TODO: Implement Recent Projects */}
+                        <Card className="bg-background/95">
+                            <CardHeader>
+                                <CardTitle>No Projects Yet</CardTitle>
+                                <CardDescription>
+                                    Upload an ePUB file to create your first
+                                    project
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </div>
+                </div>
             </div>
+
+            <UploadDialog
+                open={uploadDialogOpen}
+                onOpenChange={setUploadDialogOpen}
+                onUpload={handleUpload}
+            />
+
+            <ConfirmDeleteProjectDialog
+                open={deleteDialogOpen}
+                onOpenChange={(open) => {
+                    setDeleteDialogOpen(open);
+                    if (!open) setProjectToDelete(null);
+                }}
+                onConfirm={confirmDeleteProject}
+                deleteName={projectToDelete?.name || ""}
+            />
         </div>
     );
 }

@@ -36,6 +36,11 @@ export function MonacoEditor({
         appStore,
         (state) => state.context
     );
+    const isPrettierEnabledRef = useRef(isPrettierEnabled);
+
+    useEffect(() => {
+        isPrettierEnabledRef.current = isPrettierEnabled;
+    }, [isPrettierEnabled]);
 
     const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
     useEffect(() => {
@@ -53,7 +58,8 @@ export function MonacoEditor({
     }, [onSave]);
 
     const formatCode = async (code: string, lang: string): Promise<string> => {
-        if (!isPrettierEnabled) return code;
+        console.log(isPrettierEnabledRef.current);
+        if (!isPrettierEnabledRef.current) return code;
 
         try {
             const parser = getParserForLanguage(lang);

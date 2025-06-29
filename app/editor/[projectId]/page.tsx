@@ -240,17 +240,6 @@ export default function EditorPage() {
         }
     }, [projectId]);
 
-    const handleTogglePrettier = () => {
-        appStore.send({ type: "togglePrettier" });
-        toast.success(
-            `Prettier ${!isPrettierEnabled ? "enabled" : "disabled"}`,
-            {
-                dismissible: true,
-                closeButton: true,
-            }
-        );
-    };
-
     useEffect(() => {
         loadProject();
     }, [projectId]);
@@ -445,7 +434,9 @@ export default function EditorPage() {
                             <Switch
                                 id="prettier-toggle"
                                 checked={isPrettierEnabled}
-                                onCheckedChange={handleTogglePrettier}
+                                onCheckedChange={() =>
+                                    appStore.send({ type: "togglePrettier" })
+                                }
                             />
                         </div>
                         <Button

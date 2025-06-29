@@ -20,7 +20,7 @@ export function ThemeToggle() {
         <Button
             variant="outline"
             size="icon"
-            className="h-9 w-9"
+            className="size-9 cursor-pointer"
             onClick={toggleTheme}
             aria-label="Toggle theme"
         >

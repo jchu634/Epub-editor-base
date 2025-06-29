@@ -153,7 +153,7 @@ export default function EditorPage() {
                 setIsSaving(false);
             }
         },
-        [selectedFile, projectId]
+        [selectedFile, projectId, hasUnsavedChanges]
     );
 
     // Memoize handleExport function
@@ -509,18 +509,21 @@ export default function EditorPage() {
                     {/* Editor */}
                     <ResizablePanel defaultSize={50} minSize={30}>
                         <div className="h-full border-r">
-                            <div className="flex items-center gap-2 p-3 border-b bg-muted/50">
-                                <Code className="h-4 w-4" />
-                                <span className="text-sm font-medium">
-                                    {selectedFile
-                                        ? selectedFile.split("/").pop()
-                                        : "No file selected"}
-                                </span>
-                                {hasUnsavedChanges && (
-                                    <span className="text-xs text-orange-500">
-                                        • Unsaved
+                            <div className="flex justify-between border-b bg-muted/50">
+                                <div className="flex items-center gap-2 p-3">
+                                    <Code className="h-4 w-4" />
+                                    <span className="text-sm font-medium">
+                                        {selectedFile
+                                            ? selectedFile.split("/").pop()
+                                            : "No file selected"}
                                     </span>
-                                )}
+                                    {hasUnsavedChanges && (
+                                        <span className="text-xs text-orange-500">
+                                            • Unsaved
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center"></div>
                             </div>
                             {selectedFile ? (
                                 <MonacoEditor
@@ -528,6 +531,7 @@ export default function EditorPage() {
                                     onChange={handleContentChange}
                                     language={getFileLanguage(selectedFile)}
                                     onSave={handleSave}
+                                    hasUnsavedChanges={hasUnsavedChanges}
                                 />
                             ) : (
                                 <div className="flex items-center justify-center h-full text-muted-foreground">

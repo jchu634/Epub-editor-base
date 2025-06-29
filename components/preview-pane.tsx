@@ -100,9 +100,11 @@ export function PreviewPane({
 
     const actualTheme = useMemo(() => {
         if (previewTheme === "system") {
-            return allThemes[theme || "light"];
+            // Always fallback to 'light' if theme is not found
+            return allThemes[theme || "light"] || allThemes["light"];
         }
-        return allThemes[previewTheme] || allThemes.light;
+        // Always fallback to 'light' if previewTheme is not found
+        return allThemes[previewTheme] || allThemes["light"];
     }, [previewTheme, theme, allThemes]);
 
     const addCustomTheme = (theme: Omit<CustomTheme, "id" | "isCustom">) => {

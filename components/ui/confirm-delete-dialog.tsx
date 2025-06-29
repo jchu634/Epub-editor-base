@@ -30,8 +30,9 @@ export function ConfirmDeleteThemeDialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Custom Theme</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to delete the theme "{deleteName}
-                        "? This action cannot be undone.
+                        Are you sure you want to delete the theme &quot;
+                        {deleteName}
+                        &quot;? This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -59,9 +60,8 @@ export function ConfirmDeleteProjectDialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Project</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to delete the project "
-                        {deleteName}
-                        "? This action cannot be undone.
+                        Are you sure you want to delete the project &quot;
+                        {deleteName}&quot;? This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

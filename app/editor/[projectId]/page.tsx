@@ -21,7 +21,7 @@ import {
     ArrowLeft,
     Save,
     Download,
-    Settings,
+    // Settings,
     Loader2,
     FileText,
     Eye,
@@ -153,7 +153,7 @@ export default function EditorPage() {
                 setIsSaving(false);
             }
         },
-        [selectedFile, projectId, hasUnsavedChanges]
+        [selectedFile, projectId]
     );
 
     // Memoize handleExport function
@@ -241,6 +241,44 @@ export default function EditorPage() {
     }, [projectId]);
 
     useEffect(() => {
+        const loadProject = async () => {
+            try {
+                setIsLoading(true);
+                const opfs = OPFSManager.getInstance();
+
+                // Initialize OPFS before any file system operations
+                const initialized = await opfs.initialize();
+                if (!initialized) {
+                    throw new Error("Failed to initialize OPFS");
+                }
+
+                // Load project metadata
+                const metadataStr = await opfs.readFile(
+                    projectId,
+                    "metadata.json"
+                );
+                const metadata = JSON.parse(metadataStr);
+
+                const project: Project = {
+                    id: projectId,
+                    name: metadata.name,
+                    createdAt: new Date(metadata.createdAt),
+                    lastModified: new Date(metadata.lastModified),
+                    metadata: metadata.epubMetadata,
+                };
+
+                appStore.send({ type: "setCurrentProject", project });
+
+                // Load file structure
+                await loadFileStructure();
+            } catch (err) {
+                console.error("Failed to load project:", err);
+                toast.error("Failed to load project");
+                router.push("/");
+            } finally {
+                setIsLoading(false);
+            }
+        };
         loadProject();
     }, [projectId]);
 
@@ -256,42 +294,6 @@ export default function EditorPage() {
         return () =>
             window.removeEventListener("beforeunload", handleBeforeUnload);
     }, [hasUnsavedChanges]);
-
-    const loadProject = async () => {
-        try {
-            setIsLoading(true);
-            const opfs = OPFSManager.getInstance();
-
-            // Initialize OPFS before any file system operations
-            const initialized = await opfs.initialize();
-            if (!initialized) {
-                throw new Error("Failed to initialize OPFS");
-            }
-
-            // Load project metadata
-            const metadataStr = await opfs.readFile(projectId, "metadata.json");
-            const metadata = JSON.parse(metadataStr);
-
-            const project: Project = {
-                id: projectId,
-                name: metadata.name,
-                createdAt: new Date(metadata.createdAt),
-                lastModified: new Date(metadata.lastModified),
-                metadata: metadata.epubMetadata,
-            };
-
-            appStore.send({ type: "setCurrentProject", project });
-
-            // Load file structure
-            await loadFileStructure();
-        } catch (err) {
-            console.error("Failed to load project:", err);
-            toast.error("Failed to load project");
-            router.push("/");
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const buildFileTree = (
         allFiles: {

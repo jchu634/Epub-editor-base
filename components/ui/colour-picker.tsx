@@ -16,21 +16,21 @@ interface ColourPickerProps {
     onChange?: (value: string) => void;
 }
 
-type ColourMode = "hex" | "rgba" | "hsla";
-type CopyState = { [key in ColourMode]: boolean };
+// type ColourMode = "hex" | "rgba" | "hsla";
+// type CopyState = { [key in ColourMode]: boolean };
 
 export function ColourPicker({
     colour = "#000000",
     onChange,
 }: ColourPickerProps) {
     const [currentcolour, setCurrentcolour] = React.useState(colour);
-    const [alpha, setAlpha] = React.useState(1);
-    const [colourMode, setcolourMode] = React.useState<ColourMode>("hex");
-    const [copied, setCopied] = React.useState<CopyState>({
-        hex: false,
-        rgba: false,
-        hsla: false,
-    });
+    const alpha = 1;
+    // const [colourMode, setcolourMode] = React.useState<ColourMode>("hex");
+    // const [copied, setCopied] = React.useState<CopyState>({
+    //     hex: false,
+    //     rgba: false,
+    //     hsla: false,
+    // });
     const colourPlaneRef = React.useRef<HTMLDivElement>(null);
     const isDragging = React.useRef(false);
 
@@ -39,17 +39,17 @@ export function ColourPicker({
         a: alpha,
     };
     const hsl = colourUtils.rgbToHsl(rgb);
-    const rgbaString = colourUtils.formatRgba(rgb);
-    const hslaString = colourUtils.formatHsla(hsl);
+    // const rgbaString = colourUtils.formatRgba(rgb);
+    // const hslaString = colourUtils.formatHsla(hsl);
 
     const handlecolourChange = (newcolour: string) => {
         setCurrentcolour(newcolour);
         onChange?.(newcolour);
     };
 
-    const handleAlphaChange = (newAlpha: number) => {
-        setAlpha(newAlpha);
-    };
+    // const handleAlphaChange = (newAlpha: number) => {
+    //     setAlpha(newAlpha);
+    // };
 
     const updateHSL = (h: number, s: number, l: number) => {
         const rgb = colourUtils.hslToRgb({ h, s, l, a: alpha });

@@ -50,7 +50,7 @@ export class OPFSManager {
         if (!this.root) throw new Error("OPFS not initialized");
 
         const projects: string[] = [];
-        // @ts-ignore
+        // @ts-expect-error .entries() is missing type
         for await (const [name, handle] of this.root.entries()) {
             if (handle.kind === "directory") {
                 projects.push(name);
@@ -128,7 +128,7 @@ export class OPFSManager {
         }
 
         const items: { name: string; type: "file" | "directory" }[] = [];
-        // @ts-ignore
+        // @ts-expect-error .entries() is missing type
         for await (const [name, handle] of currentDir.entries()) {
             items.push({
                 name,
@@ -157,7 +157,7 @@ export class OPFSManager {
             dir: FileSystemDirectoryHandle,
             currentPath: string = ""
         ) => {
-            // @ts-ignore
+            // @ts-expect-error .entries() is missing type
             for await (const [name, handle] of dir.entries()) {
                 const fullPath = currentPath ? `${currentPath}/${name}` : name;
 

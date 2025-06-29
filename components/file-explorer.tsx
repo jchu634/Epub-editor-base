@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, memo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import {
     Folder,
     File,
     FileText,
-    Image,
+    ImageIcon,
     Code,
     Search,
     ChevronRight,
@@ -34,33 +34,33 @@ function FileExplorer({
     files,
     selectedFile,
     onFileSelect,
-    onRefresh,
+    onRefresh, // eslint-disable-line
 }: FileExplorerProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
 
     const getFileIcon = (fileName: string, isDirectory: boolean) => {
         if (isDirectory) {
-            return <Folder className="h-4 w-4 text-blue-500" />;
+            return <Folder className="size-4 text-blue-500" />;
         }
 
         const ext = fileName.split(".").pop()?.toLowerCase();
         switch (ext) {
             case "html":
             case "xhtml":
-                return <FileText className="h-4 w-4 text-orange-500" />;
+                return <FileText className="size-4 text-orange-500" />;
             case "css":
-                return <Code className="h-4 w-4 text-blue-500" />;
+                return <Code className="size-4 text-blue-500" />;
             case "js":
-                return <Code className="h-4 w-4 text-yellow-500" />;
+                return <Code className="size-4 text-yellow-500" />;
             case "jpg":
             case "jpeg":
             case "png":
             case "gif":
             case "svg":
-                return <Image className="h-4 w-4 text-green-500" />;
+                return <ImageIcon className="size-4 text-green-500" />;
             default:
-                return <File className="h-4 w-4 text-gray-500" />;
+                return <File className="size-4 text-gray-500" />;
         }
     };
 
@@ -130,7 +130,7 @@ function FileExplorer({
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-4 w-4 p-0 flex-shrink-0"
+                            className="size-4 p-0 flex-shrink-0"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 toggleDirectory(item.path);
@@ -177,7 +177,7 @@ function FileExplorer({
         <div className="h-full flex flex-col">
             <div className="p-3 border-b">
                 <div className="relative">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
                     <Input
                         placeholder="Search files..."
                         value={searchTerm}

@@ -29,6 +29,7 @@ export function MonacoEditor({
     hasUnsavedChanges = true,
 }: MonacoEditorProps) {
     const { theme } = useTheme();
+    // eslint-disable-next-line
     const editorRef = useRef<any>(null);
     const languageRef = useRef(language); // Track latest language
     const onSaveRef = useRef(onSave); // Track latest onSave
@@ -66,6 +67,7 @@ export function MonacoEditor({
             if (!parser) return code;
 
             // Select plugins based on parser
+            // eslint-disable-next-line
             let plugins: any[] = [
                 parserHtml,
                 parserCss,
@@ -131,6 +133,7 @@ export function MonacoEditor({
         return languageMap[lang] || null;
     };
 
+    // eslint-disable-next-line
     const handleEditorDidMount = (editor: any, monaco: any) => {
         editorRef.current = editor;
 

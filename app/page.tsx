@@ -36,45 +36,44 @@ export default function HomePage() {
     );
 
     useEffect(() => {
-        initializeApp();
-    }, []);
+        const initializeApp = async () => {
+            appStore.send({ type: "setLoading", loading: true });
 
-    const initializeApp = async () => {
-        appStore.send({ type: "setLoading", loading: true });
+            const opfs = OPFSManager.getInstance();
+            const supported = opfs.isSupported();
 
-        const opfs = OPFSManager.getInstance();
-        const supported = opfs.isSupported();
+            appStore.send({ type: "setOpfsSupported", supported });
 
-        appStore.send({ type: "setOpfsSupported", supported });
-
-        if (!supported) {
-            appStore.send({
-                type: "setError",
-                error: "Your browser does not support OPFS (Origin Private File System). Please use a modern browser like Chrome, Edge, or Firefox.",
-            });
-            appStore.send({ type: "setLoading", loading: false });
-            return;
-        }
-
-        try {
-            const initialized = await opfs.initialize();
-            if (!initialized) {
-                throw new Error("Failed to initialize OPFS");
+            if (!supported) {
+                appStore.send({
+                    type: "setError",
+                    error: "Your browser does not support OPFS (Origin Private File System). Please use a modern browser like Chrome, Edge, or Firefox.",
+                });
+                appStore.send({ type: "setLoading", loading: false });
+                return;
             }
 
-            await loadProjects();
-        } catch (err) {
-            appStore.send({
-                type: "setError",
-                error:
-                    err instanceof Error
-                        ? err.message
-                        : "Failed to initialize application",
-            });
-        } finally {
-            appStore.send({ type: "setLoading", loading: false });
-        }
-    };
+            try {
+                const initialized = await opfs.initialize();
+                if (!initialized) {
+                    throw new Error("Failed to initialize OPFS");
+                }
+
+                await loadProjects();
+            } catch (err) {
+                appStore.send({
+                    type: "setError",
+                    error:
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to initialize application",
+                });
+            } finally {
+                appStore.send({ type: "setLoading", loading: false });
+            }
+        };
+        initializeApp();
+    }, []);
 
     const loadProjects = async () => {
         try {

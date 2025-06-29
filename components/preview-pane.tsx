@@ -3,7 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-    ExternalLink,
+    // ExternalLink,
     Eye,
     Sun,
     Moon,
@@ -12,7 +12,7 @@ import {
     Plus,
     X,
     Edit,
-    Bug,
+    // Bug,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -26,6 +26,7 @@ import { CustomThemeDialog } from "@/components/ui/custom-theme-dialog";
 import { ConfirmDeleteThemeDialog } from "@/components/ui/confirm-delete-dialog";
 
 // A simple debounce utility function
+// eslint-disable-next-line
 function debounce<T extends (...args: any[]) => void>(
     func: T,
     wait: number
@@ -161,11 +162,11 @@ export function PreviewPane({
         return ext || "unknown";
     };
 
-    const openInNewTab = () => {
-        const blob = new Blob([content], { type: "text/html" });
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-    };
+    // const openInNewTab = () => {
+    //     const blob = new Blob([content], { type: "text/html" });
+    //     const url = URL.createObjectURL(blob);
+    //     window.open(url, "_blank");
+    // };
 
     const getThemeIcon = (themeId: string) => {
         if (themeId === "light") return <Sun className="h-3.5 w-3.5" />;
@@ -445,6 +446,7 @@ export function PreviewPane({
     }, []);
 
     // Debounced function to update the service worker and reload the iframe
+    // eslint-disable-next-line
     const updatePreviewDebounced = useCallback(
         debounce((fullHtml: string) => {
             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -561,6 +563,7 @@ export function PreviewPane({
                 )}`;
                 return (
                     <div className="flex items-center justify-center h-full p-4">
+                        {/* eslint-disable-next-line */}
                         <img
                             src={imageUrl}
                             alt="Preview"
@@ -583,15 +586,15 @@ export function PreviewPane({
         }
     };
 
-    const logIframeScrollPosition = () => {
-        if (iframeRef.current && iframeRef.current.contentWindow) {
-            const x = iframeRef.current.contentWindow.scrollX;
-            const y = iframeRef.current.contentWindow.scrollY;
-            console.log("Iframe scroll position:", { x, y });
-        } else {
-            console.log("Iframe not ready or not HTML content.");
-        }
-    };
+    // const logIframeScrollPosition = () => {
+    //     if (iframeRef.current && iframeRef.current.contentWindow) {
+    //         const x = iframeRef.current.contentWindow.scrollX;
+    //         const y = iframeRef.current.contentWindow.scrollY;
+    //         console.log("Iframe scroll position:", { x, y });
+    //     } else {
+    //         console.log("Iframe not ready or not HTML content.");
+    //     }
+    // };
 
     return (
         <div className="h-full flex flex-col">

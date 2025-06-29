@@ -55,6 +55,8 @@ export function PreviewPane({
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const scrollPositionRef = useRef({ x: 0, y: 0 });
     const isContentHtmlRef = useRef(false);
+    const serviceWorkerRegistrationRef =
+        useRef<ServiceWorkerRegistration | null>(null);
 
     // --- Custom theme state (unchanged) ---
     const [previewTheme, setPreviewTheme] = useState<PreviewTheme>("system");
@@ -465,6 +467,35 @@ export function PreviewPane({
         }, 300), // 300ms debounce delay
         [saveScrollPosition, restoreScrollPosition] // Dependencies for useCallback
     );
+
+    // Effect to register the service worker
+    useEffect(() => {
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker
+                .register("/preview-sw.js")
+                .then((registration) => {
+                    serviceWorkerRegistrationRef.current = registration;
+                    console.log(
+                        "Service Worker registered with scope:",
+                        registration.scope
+                    );
+                })
+                .catch((error) => {
+                    console.error("Service Worker registration failed:", error);
+                });
+        }
+
+        // Cleanup: unregister the service worker when the component unmounts
+        return () => {
+            serviceWorkerRegistrationRef.current
+                ?.unregister()
+                .then((success) => {
+                    if (success) {
+                        console.log("Service Worker unregistered.");
+                    }
+                });
+        };
+    }, []);
 
     // Effect to update the preview when content or theme changes
     useEffect(() => {

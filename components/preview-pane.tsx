@@ -608,6 +608,8 @@ export function PreviewPane({
                         getFileType(filePath) === "xhtml") && (
                         <PreviewThemeToggle />
                     )}
+
+                    {/* TODO: Make actually useful
                     <Button
                         variant="ghost"
                         size="icon"
@@ -615,8 +617,8 @@ export function PreviewPane({
                         className="size-4 cursor-pointer"
                     >
                         <ExternalLink className="size-4" />
-                    </Button>
-                    <Button
+                    </Button> */}
+                    {/* <Button
                         variant="ghost"
                         size="icon"
                         onClick={logIframeScrollPosition}
@@ -624,7 +626,7 @@ export function PreviewPane({
                         title="Log iframe scroll position"
                     >
                         <Bug className="size-4" />
-                    </Button>
+                    </Button> */}
                 </div>
             </div>
             <div className="flex-1 overflow-hidden">{renderPreview()}</div>

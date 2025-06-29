@@ -5,7 +5,11 @@ import Editor from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import { useSelector } from "@xstate/store/react";
 import { appStore } from "@/lib/store";
-import prettier from "prettier";
+import prettier from "prettier/standalone";
+import parserHtml from "prettier/plugins/html";
+import parserCss from "prettier/plugins/postcss";
+import parserBabel from "prettier/plugins/babel";
+// import parserXml from "prettier-plugin-xml";
 
 interface MonacoEditorProps {
     value: string;
@@ -13,6 +17,7 @@ interface MonacoEditorProps {
     language: string;
     readOnly?: boolean;
     onSave?: (currentContent: string) => void;
+    hasUnsavedChanges?: boolean;
 }
 
 export function MonacoEditor({
@@ -21,10 +26,31 @@ export function MonacoEditor({
     language,
     readOnly = false,
     onSave,
+    hasUnsavedChanges = true,
 }: MonacoEditorProps) {
     const { theme } = useTheme();
     const editorRef = useRef<any>(null);
-    const { isPrettierEnabled } = useSelector(appStore, (state) => state.context);
+    const languageRef = useRef(language); // Track latest language
+    const onSaveRef = useRef(onSave); // Track latest onSave
+    const { isPrettierEnabled } = useSelector(
+        appStore,
+        (state) => state.context
+    );
+
+    const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
+    useEffect(() => {
+        hasUnsavedChangesRef.current = hasUnsavedChanges;
+    }, [hasUnsavedChanges]);
+
+    // Keep languageRef up to date with prop
+    useEffect(() => {
+        languageRef.current = language;
+    }, [language]);
+
+    // Keep onSaveRef up to date with prop
+    useEffect(() => {
+        onSaveRef.current = onSave;
+    }, [onSave]);
 
     const formatCode = async (code: string, lang: string): Promise<string> => {
         if (!isPrettierEnabled) return code;
@@ -33,8 +59,36 @@ export function MonacoEditor({
             const parser = getParserForLanguage(lang);
             if (!parser) return code;
 
+            // Select plugins based on parser
+            let plugins: any[] = [
+                parserHtml,
+                parserCss,
+                parserBabel,
+                // parserXml,
+            ];
+
+            switch (parser) {
+                case "html":
+                    plugins = [parserHtml];
+                    break;
+                case "css":
+                    plugins = [parserCss];
+                    break;
+                case "babel":
+                    plugins = [parserBabel];
+                    break;
+                case "json":
+                case "xml":
+                    return lang;
+                //     plugins = [parserXml];
+                //     break;
+                default:
+                    plugins = [];
+            }
+
             const formatted = await prettier.format(code, {
                 parser,
+                plugins,
                 printWidth: 80,
                 tabWidth: 2,
                 useTabs: false,
@@ -63,7 +117,6 @@ export function MonacoEditor({
             css: "css",
             js: "babel",
             javascript: "babel",
-            json: "json",
             xml: "xml",
             opf: "xml",
             ncx: "xml",
@@ -85,26 +138,36 @@ export function MonacoEditor({
             scrollBeyondLastLine: false,
             renderWhitespace: "selection",
             bracketPairColorization: { enabled: true },
-            formatOnSave: false, // We'll handle formatting manually
+            formatOnSave: false,
         });
 
         // Add custom keybindings
-        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
-            if (onSave) {
-                let currentContent = editor.getValue();
-                
-                // Format code if Prettier is enabled
-                if (isPrettierEnabled) {
-                    const formatted = await formatCode(currentContent, language);
-                    if (formatted !== currentContent) {
-                        editor.setValue(formatted);
-                        currentContent = formatted;
+        editor.addCommand(
+            monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+            async () => {
+                // Use latest onSave from ref
+                if (onSaveRef.current) {
+                    let currentContent = editor.getValue();
+
+                    // Use latest language from ref
+                    const currentLanguage = languageRef.current;
+
+                    // Format code if Prettier is enabled
+                    if (isPrettierEnabled) {
+                        const formatted = await formatCode(
+                            currentContent,
+                            currentLanguage
+                        );
+                        if (formatted !== currentContent) {
+                            currentContent = formatted;
+                            editor.setValue(currentContent);
+                        }
                     }
+
+                    onSaveRef.current(currentContent);
                 }
-                
-                onSave(currentContent);
             }
-        });
+        );
 
         // Add format document command (Alt+Shift+F)
         editor.addCommand(
@@ -112,7 +175,12 @@ export function MonacoEditor({
             async () => {
                 if (isPrettierEnabled) {
                     const currentContent = editor.getValue();
-                    const formatted = await formatCode(currentContent, language);
+                    // Use latest language from ref
+                    const currentLanguage = languageRef.current;
+                    const formatted = await formatCode(
+                        currentContent,
+                        currentLanguage
+                    );
                     if (formatted !== currentContent) {
                         editor.setValue(formatted);
                         onChange(formatted);

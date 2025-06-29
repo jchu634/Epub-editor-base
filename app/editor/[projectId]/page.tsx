@@ -53,7 +53,10 @@ export default function EditorPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    const { currentProject, isPrettierEnabled } = useSelector(appStore, (state) => state.context);
+    const { currentProject, isPrettierEnabled } = useSelector(
+        appStore,
+        (state) => state.context
+    );
 
     // Memoize loadFileContent function
     const loadFileContent = useCallback(
@@ -433,7 +436,10 @@ export default function EditorPage() {
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-2 px-3 py-1 rounded-md border">
                             <Wand2 className="h-4 w-4" />
-                            <Label htmlFor="prettier-toggle" className="text-sm cursor-pointer">
+                            <Label
+                                htmlFor="prettier-toggle"
+                                className="text-sm cursor-pointer"
+                            >
                                 Prettier
                             </Label>
                             <Switch
@@ -442,7 +448,6 @@ export default function EditorPage() {
                                 onCheckedChange={handleTogglePrettier}
                             />
                         </div>
-
                         <Button
                             variant="outline"
                             size="sm"

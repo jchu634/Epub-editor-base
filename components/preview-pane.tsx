@@ -293,128 +293,126 @@ export function PreviewPane({
         </>
     );
 
-    const iframeStyles = useMemo(() => {
-        return `* { box-sizing: border-box; }
-                    body {
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        line-height: 1.6;
-                        color: ${actualTheme.color};
-                        background: ${actualTheme.background};
-                        margin: 0;
-                        padding: 1rem;
-                        font-size: 16px;
-                        transition: all 0.3s ease;
-                    }
-                    h1, h2, h3, h4, h5, h6 {
-                        color: ${actualTheme.headingColor};
-                        margin-top: 1.5em;
-                        margin-bottom: 0.5em;
-                        font-weight: 600;
-                        line-height: 1.3;
-                    }
-                    h1 { font-size: 2em; }
-                    h2 { font-size: 1.5em; }
-                    h3 { font-size: 1.25em; }
-                    p {
-                        margin-bottom: 1em;
-                        text-align: justify;
-                        hyphens: auto;
-                    }
-                    a {
-                        color: ${actualTheme.linkColor};
-                        text-decoration: underline;
-                        text-decoration-thickness: 1px;
-                        text-underline-offset: 2px;
-                    }
-                    a:visited {
-                        color: ${actualTheme.linkVisitedColor};
-                    }
-                    a:hover {
-                        text-decoration-thickness: 2px;
-                    }
-                    blockquote {
-                        border-left: 4px solid ${actualTheme.linkColor};
-                        margin: 1em 0;
-                        padding-left: 1em;
-                        font-style: italic;
-                        opacity: 0.9;
-                    }
-                    code {
-                        background: ${actualTheme.codeBackground};
-                        padding: 0.2em 0.4em;
-                        border-radius: 3px;
-                        font-family: "Intel One Mono", 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-                        font-size: 0.9em;
-                        border: 1px solid ${actualTheme.borderColor};
-                    }
-                    pre {
-                        background: ${actualTheme.codeBackground};
-                        padding: 1em;
-                        border-radius: 6px;
-                        overflow-x: auto;
-                        border: 1px solid ${actualTheme.borderColor};
-                    }
-                    pre code {
-                        background: none;
-                        padding: 0;
-                        border: none;
-                    }
-                    img {
-                        max-width: 100%;
-                        height: auto;
-                        border-radius: 4px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 1em 0;
-                    }
-                    th, td {
-                        border: 1px solid ${actualTheme.borderColor};
-                        padding: 0.5em;
-                        text-align: left;
-                    }
-                    th {
-                        background: ${actualTheme.codeBackground};
-                        font-weight: 600;
-                    }
-                    ul, ol {
-                        padding-left: 1.5em;
-                        margin-bottom: 1em;
-                    }
-                    li {
-                        margin-bottom: 0.25em;
-                    }
-                    hr {
-                        border: none;
-                        border-top: 2px solid ${actualTheme.borderColor};
-                        margin: 2em 0;
-                    }
-                    .epub-content {
-                        max-width: 100%;
-                        margin: 0 auto;
-                    }
-                    .chapter-title {
-                        text-align: center;
-                        margin-bottom: 2em;
-                    }
-                    .drop-cap {
-                        float: left;
-                        font-size: 3em;
-                        line-height: 1;
-                        margin-right: 0.1em;
-                        margin-top: 0.1em;
-                        color: ${actualTheme.headingColor};
-                    }
+    const iframeStyles = `* { box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: ${actualTheme.color};
+                    background: ${actualTheme.background};
+                    margin: 0;
+                    padding: 1rem;
+                    font-size: 16px;
+                    transition: all 0.3s ease;
+                }
+                h1, h2, h3, h4, h5, h6 {
+                    color: ${actualTheme.headingColor};
+                    margin-top: 1.5em;
+                    margin-bottom: 0.5em;
+                    font-weight: 600;
+                    line-height: 1.3;
+                }
+                h1 { font-size: 2em; }
+                h2 { font-size: 1.5em; }
+                h3 { font-size: 1.25em; }
+                p {
+                    margin-bottom: 1em;
+                    text-align: justify;
+                    hyphens: auto;
+                }
+                a {
+                    color: ${actualTheme.linkColor};
+                    text-decoration: underline;
+                    text-decoration-thickness: 1px;
+                    text-underline-offset: 2px;
+                }
+                a:visited {
+                    color: ${actualTheme.linkVisitedColor};
+                }
+                a:hover {
+                    text-decoration-thickness: 2px;
+                }
+                blockquote {
+                    border-left: 4px solid ${actualTheme.linkColor};
+                    margin: 1em 0;
+                    padding-left: 1em;
+                    font-style: italic;
+                    opacity: 0.9;
+                }
+                code {
+                    background: ${actualTheme.codeBackground};
+                    padding: 0.2em 0.4em;
+                    border-radius: 3px;
+                    font-family: "Intel One Mono", 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+                    font-size: 0.9em;
+                    border: 1px solid ${actualTheme.borderColor};
+                }
+                pre {
+                    background: ${actualTheme.codeBackground};
+                    padding: 1em;
+                    border-radius: 6px;
+                    overflow-x: auto;
+                    border: 1px solid ${actualTheme.borderColor};
+                }
+                pre code {
+                    background: none;
+                    padding: 0;
+                    border: none;
+                }
+                img {
+                    max-width: 100%;
+                    height: auto;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 1em 0;
+                }
+                th, td {
+                    border: 1px solid ${actualTheme.borderColor};
+                    padding: 0.5em;
+                    text-align: left;
+                }
+                th {
+                    background: ${actualTheme.codeBackground};
+                    font-weight: 600;
+                }
+                ul, ol {
+                    padding-left: 1.5em;
+                    margin-bottom: 1em;
+                }
+                li {
+                    margin-bottom: 0.25em;
+                }
+                hr {
+                    border: none;
+                    border-top: 2px solid ${actualTheme.borderColor};
+                    margin: 2em 0;
+                }
+                .epub-content {
+                    max-width: 100%;
+                    margin: 0 auto;
+                }
+                .chapter-title {
+                    text-align: center;
+                    margin-bottom: 2em;
+                }
+                .drop-cap {
+                    float: left;
+                    font-size: 3em;
+                    line-height: 1;
+                    margin-right: 0.1em;
+                    margin-top: 0.1em;
+                    color: ${actualTheme.headingColor};
+                }
 
-                    @media (max-width: 600px) {
-                        body { padding: 0.5rem; font-size: 14px; }
-                        h1 { font-size: 1.75em; }
-                        h2 { font-size: 1.4em; }
-                        h3 { font-size: 1.2em; }
-                    }`;
-    }, [actualTheme]);
+                @media (max-width: 600px) {
+                    body { padding: 0.5rem; font-size: 14px; }
+                    h1 { font-size: 1.75em; }
+                    h2 { font-size: 1.4em; }
+                    h3 { font-size: 1.2em; }
+                }`;
 
     // --- SERVICE WORKER AND SCROLL LOGIC ---
 
